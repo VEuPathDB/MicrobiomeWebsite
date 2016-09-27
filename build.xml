@@ -1,0 +1,129 @@
+<project name="MicrobiomeDBWebsite" default="Installation" basedir=".">
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <import file="${projectsDir}/ApiCommonWebsite/build.xml" />
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo    Checkout    oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeDBWebsite-ChildCheckout">
+    <available file="${projectsDir}/ApiCommonWebsite" type="dir"  property="ApiCommonWebsite.present" />
+    <antcall target="ApiCommonWebsite-Checkout"/>
+  </target>
+  
+  
+  <target name="ApiCommonWebsite-Checkout" unless="ApiCommonWebsite.present">
+    <ant target="defaultProjectCheckout" inheritAll="false">
+      <property name="svnurl" value="https://www.cbil.upenn.edu/svn/apidb/ApiCommonWebsite"/>
+      <property name="project" value="ApiCommonWebsite"/>
+      <property name="version" value="??"/>
+    </ant>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo    Update    oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="ApiCommonWebsite-ChildUpdate" >
+     <ant target="defaultProjectUpdate">
+      <property name="project" value="ApiCommonWebsite"/>
+    </ant>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeDBWebsite-Installation" depends="ApiCommonWebsite-Installation">
+    <ant target="defaultProjectInstall">
+      <property name="project" value="MicrobiomeDBWebsite"/>
+    </ant>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <target name="MicrobiomeDBWebsite-WebInstallation" depends="EuPathSiteCommon-WebInstallation,
+                                                              ApiCommonWebsite-WebInstallation,
+                                                              MicrobiomeDBWebsite-Installation,
+                                                              MicrobiomeDBWebsite/Site-WebInstallation">
+ </target>
+
+
+  <target name="MicrobiomeDBWebsite/Site-WebInstallation">
+
+    <ant target="defaultWebComponentInstall">
+      <property name="project" value="MicrobiomeDBWebsite"/>
+      <property name="component" value="Site"/>
+    </ant>
+
+    <!--
+    <echo message="Building ApiCommonWebsite/Site assets"/>
+    <exec dir="${projectsDir}/ApiCommonWebsite/Site"
+      executable="make"
+      failonerror="true"
+      failifexecutionfails="true"/>
+
+    <echo message="Copying ApiCommonWebsite/Site assets to webapp"/>
+    <copy todir="${webappTargetDir}">
+      <fileset dir="${projectsDir}/ApiCommonWebsite/Site/dist"/>
+    </copy>
+    -->
+
+    <antcall target="EuPathSiteCommon-post-webinstall"/>
+
+    <available file="${targetDir}/config/log4j.xml.custom-web" property="custom.weblog4j.present"/>
+    <antcall target="installCustomWebLog4j"/>
+    <available file="${webappTargetDir}/WEB-INF/classes/log4j.xml" property="weblog4j.present"/>
+    <antcall target="setLog4j"/>
+
+  </target>
+
+  <target name="installCustomWebLog4j" if="custom.weblog4j.present">
+    <echo message="Installing custom log4j.xml from"/>
+    <echo message="${targetDir}/config/log4j.xml.custom-web"/>
+    <copy overwrite="true"
+          file="${targetDir}/config/log4j.xml.custom-web" 
+          tofile="${webappTargetDir}/WEB-INF/classes/log4j.xml"/>
+  </target>
+  <target name="setLog4j" if="weblog4j.present">
+    <dirname  property="webappDir" file="${webappTargetDir}"/>
+    <basename property="webapp" file="${webappDir}"/>
+    <replace file="${webappTargetDir}/WEB-INF/classes/log4j.xml" token="@WEBAPP@" value="${webapp}"/>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooo  Release  ooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeDBWebsite-Release">
+    
+    <ant target="defaultProjectRelease">
+      <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS"/>
+    </ant>
+  </target>  
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeDBWebsite-Distributable">
+
+    <copy todir="${targetDir}">
+      <fileset dir="${projectsDir}" >
+        <exclude name="**/CVS/*" />
+      </fileset>
+    </copy>  
+  </target>  
+
+</project>
+
