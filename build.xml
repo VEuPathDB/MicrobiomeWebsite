@@ -42,66 +42,29 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <target name="MicrobiomeDBWebsite-WebInstallation" depends="EuPathSiteCommon-WebInstallation,
-                                                              ApiCommonWebsite-WebInstallation,
-                                                              MicrobiomeDBWebsite-Installation,
-                                                              MicrobiomeDBWebsite/Site-WebInstallation">
+  <target name="MicrobiomeDBWebsite-WebInstallation" depends="MicrobiomeDBWebsite-Installation,
+                                                              EuPathSiteCommon-WebInstallation,
+                                                              MicrobiomeDBWebsite/Site-WebInstallation,
+                                                              ApiCommonWebsite/Site-WebInstallation">
  </target>
 
 
-  <target name="MicrobiomeDBWebsite/Site-WebInstallation">
-
+ <target name="MicrobiomeDBWebsite/Site-WebInstallation">
     <ant target="defaultWebComponentInstall">
       <property name="project" value="MicrobiomeDBWebsite"/>
       <property name="component" value="Site"/>
     </ant>
-
-    <!--
-    <echo message="Building ApiCommonWebsite/Site assets"/>
-    <exec dir="${projectsDir}/ApiCommonWebsite/Site"
-      executable="make"
-      failonerror="true"
-      failifexecutionfails="true"/>
-
-    <echo message="Copying ApiCommonWebsite/Site assets to webapp"/>
-    <copy todir="${webappTargetDir}">
-      <fileset dir="${projectsDir}/ApiCommonWebsite/Site/dist"/>
-    </copy>
-    -->
-
-    <antcall target="EuPathSiteCommon-post-webinstall"/>
-
-    <available file="${targetDir}/config/log4j.xml.custom-web" property="custom.weblog4j.present"/>
-    <antcall target="installCustomWebLog4j"/>
-    <available file="${webappTargetDir}/WEB-INF/classes/log4j.xml" property="weblog4j.present"/>
-    <antcall target="setLog4j"/>
-
   </target>
-
-  <target name="installCustomWebLog4j" if="custom.weblog4j.present">
-    <echo message="Installing custom log4j.xml from"/>
-    <echo message="${targetDir}/config/log4j.xml.custom-web"/>
-    <copy overwrite="true"
-          file="${targetDir}/config/log4j.xml.custom-web" 
-          tofile="${webappTargetDir}/WEB-INF/classes/log4j.xml"/>
-  </target>
-  <target name="setLog4j" if="weblog4j.present">
-    <dirname  property="webappDir" file="${webappTargetDir}"/>
-    <basename property="webapp" file="${webappDir}"/>
-    <replace file="${webappTargetDir}/WEB-INF/classes/log4j.xml" token="@WEBAPP@" value="${webapp}"/>
-  </target>
-
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooo  Release  ooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeDBWebsite-Release">
-    
     <ant target="defaultProjectRelease">
       <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS"/>
     </ant>
-  </target>  
+  </target>
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
@@ -113,8 +76,8 @@
       <fileset dir="${projectsDir}" >
         <exclude name="**/CVS/*" />
       </fileset>
-    </copy>  
-  </target>  
+    </copy>
+  </target>
 
 </project>
 
