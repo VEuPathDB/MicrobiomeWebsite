@@ -42,15 +42,14 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <target name="MicrobiomeDBWebsite-WebInstallation" depends="MicrobiomeDBWebsite-Installation,
-                                                              EuPathSiteCommon-WebInstallation,
-                                                              MicrobiomeDBWebsite/Site-WebInstallation,
-                                                              ApiCommonWebsite/Site-WebInstallation">
+  <target name="MicrobiomeDBWebsite-WebInstallation" depends="EuPathSiteCommon-WebInstallation,
+                                                              MicrobiomeDBWebsite-Installation,
+                                                              MicrobiomeDBWebsite/Site-WebInstallation">
  </target>
 
 
  <target name="MicrobiomeDBWebsite/Site-WebInstallation">
-    <ant target="defaultWebComponentInstall">
+    <ant target="eupathWebComponentInstall">
       <property name="project" value="MicrobiomeDBWebsite"/>
       <property name="component" value="Site"/>
     </ant>
