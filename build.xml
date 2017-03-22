@@ -45,10 +45,9 @@
   <target name="MicrobiomeDBWebsite-WebInstallation" depends="EuPathSiteCommon-WebInstallation,
                                                               MicrobiomeDBWebsite-Installation,
                                                               MicrobiomeDBWebsite/Site-WebInstallation">
- </target>
+  </target>
 
-
- <target name="MicrobiomeDBWebsite/Site-WebInstallation">
+  <target name="MicrobiomeDBWebsite/Site-WebInstallation">
     <ant target="eupathWebComponentInstall">
       <property name="project" value="MicrobiomeDBWebsite"/>
       <property name="component" value="Site"/>
