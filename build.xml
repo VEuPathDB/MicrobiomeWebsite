@@ -1,0 +1,81 @@
+<project name="MicrobiomeWebsite" default="Installation" basedir=".">
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <import file="${projectsDir}/ApiCommonWebsite/build.xml" />
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo    Checkout    oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeWebsite-ChildCheckout">
+    <available file="${projectsDir}/ApiCommonWebsite" type="dir"  property="ApiCommonWebsite.present" />
+    <antcall target="ApiCommonWebsite-Checkout"/>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo    Update    oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeWebsite-ChildUpdate" >
+     <ant target="defaultProjectUpdate">
+      <property name="project" value="ApiCommonWebsite"/>
+    </ant>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeWebsite-Installation" depends="ApiCommonWebsite-Installation">
+    <ant target="defaultProjectInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+    </ant>
+  </target>
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <target name="MicrobiomeWebsite-WebInstallation" depends="EbrcWebsiteCommon-WebInstallation,
+                                                              MicrobiomeWebsite-Installation,
+                                                              MicrobiomeWebsite/Site-WebInstallation">
+  </target>
+
+  <target name="MicrobiomeWebsite/Site-WebInstallation">
+    <ant target="eupathWebComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="Site"/>
+    </ant>
+  </target>
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooo  Release  ooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeWebsite-Release">
+    <ant target="defaultProjectRelease">
+      <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS"/>
+    </ant>
+  </target>
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="MicrobiomeWebsite-Distributable">
+
+    <copy todir="${targetDir}">
+      <fileset dir="${projectsDir}" >
+        <exclude name="**/CVS/*" />
+      </fileset>
+    </copy>
+  </target>
+
+</project>
+
