@@ -1,24 +1,10 @@
 library(shiny)
 library(shinyjs)
 
-appCSS <- "
-#loading-content {
-position: absolute;
-background: #FFFFFF;
-opacity: 0.9;
-z-index: 100;
-left: 0;
-right: 0;
-height: 100%;
-text-align: center;
-color: #858585;
-}
-"
-
 shinyUI( 
 	fluidPage(
 	  useShinyjs(),
-	  inlineCSS(appCSS),
+	  includeCSS("www/style.css"),
 	  # Loading message
 	  div(id = "loading-content",
 	      h5("We are preparing the graphical representation..."),
@@ -28,7 +14,8 @@ shinyUI(
 	  hidden(
 	    div(
 	      id = "app-content",
-	      fluidRow(column(
+	      fluidRow(
+	        column(
 	        4,
 	        selectInput("distance", "Distance Method:",
 	                    c(
@@ -47,7 +34,7 @@ shinyUI(
 	            ))
 	      ),
 	      column(
-	        8,
+	        4,
 	        selectizeInput(
 	          "category",
 	          choices = NULL,
@@ -55,7 +42,25 @@ shinyUI(
 	          options = list(placeholder = 'Loading...'),
 	          width = "100%"
 	        )
-	      )),
+	      ),
+	      column(4,
+	             div(
+	               style = "",
+	               fluidRow(
+	                 strong("Download")
+	               ),
+	               fluidRow(
+	                 div(
+	                   style = "padding-top: 0.45em;",
+	                   downloadButton("btnDownloadPNG", class="btnToolbar", label = "", tooltip="Download plot as PNG"),
+	                   downloadButton("btnDownloadSVG", class="btnToolbar", label = "", tooltip="Download plot as SVG"),
+	                   downloadButton("btnDownloadEPS", class="btnToolbar", label = "", tooltip="Download plot as EPS"),
+	                   downloadButton("btnDownloadCSV", class="btnToolbar", label = "", tooltip="Download data as CSV")
+	                 )
+	               ) 
+	             )
+	      )
+	      ),
 	      fluidRow(column(12,
       	  div(
       	    style = "position:relative",

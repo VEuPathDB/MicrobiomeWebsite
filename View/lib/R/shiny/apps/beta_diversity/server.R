@@ -13,8 +13,8 @@ shinyServer(function(input, output, session) {
   columns <- NULL
   hash_sample_names<- NULL
   hash_count_samples <- NULL
-  richness_default <- NULL
-  plot_build <- NULL
+  ggplot_object<-NULL
+  ggplot_data <- NULL
 
   physeq <- reactive({
     #Change with the file with abundances
@@ -77,6 +77,8 @@ shinyServer(function(input, output, session) {
 
     merged_phyloseq
   })
+  
+  
 
 	output$abundanceChart <- renderPlot({
 	  physeqobj = physeq()
@@ -84,18 +86,69 @@ shinyServer(function(input, output, session) {
 	  if(!identical(input$category, "")){
       ordination = ordinate(physeqobj, method = "PCoA", distance = input$distance)
       if(identical(input$category, "All Samples")){
-        chart <- plot_ordination(physeqobj, ordination)+theme(
-          panel.grid.major.x = element_blank(), legend.position="none")+geom_point(size = 4, alpha= 0.5)
+        chart <- plot_ordination(physeqobj, ordination)+
+          geom_point(size = 4, alpha= 0.5)+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            axis.text.x = element_blank(),
+            axis.ticks.x =  element_blank(),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            legend.position="none"
+          )
       }else{
-        chart <- plot_ordination(physeqobj, ordination, color=hash_sample_names[[hash_count_samples[[input$category]]]])+theme(
-          panel.grid.major.x = element_blank())+labs(color=hash_count_samples[[input$category]])+geom_point(size = 4, alpha= 0.5)
+        chart <- plot_ordination(physeqobj, ordination, color=hash_sample_names[[hash_count_samples[[input$category]]]])+
+          geom_point(size = 4, alpha= 0.5)+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
+            legend.key.size = unit(x = 1.5, units = "char"),
+            axis.text.x = element_text(angle = 0, hjust = 0.5),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black")
+          )+
+          labs(color=hash_count_samples[[input$category]])
       }
-      richness_default <<- chart$data
+      ggplot_data <<- chart$data
+      ggplot_object <<- chart
 	  }else{
 	    chart<-NULL
 	  }
 	  chart
 	})
+	
+	output$btnDownloadPNG <- downloadHandler(
+	  filename = "plot.png",
+	  content = function(file) {
+	    png(file, width=1200,height=800,units="px")
+	    print(ggplot_object)
+	    dev.off()
+	  }
+	)
+	
+	output$btnDownloadEPS <- downloadHandler(
+	  filename = "plot.eps",
+	  content = function(file) {
+	    setEPS()
+	    postscript(file, width=16,height=10.67, family = "Palatino")
+	    print(ggplot_object)
+	    dev.off()
+	  }
+	)
+	
+	output$btnDownloadSVG <- downloadHandler(
+	  filename = "plot.svg",
+	  content = function(file) {
+	    svg(file, width=16,height=10.67)
+	    print(ggplot_object)
+	    dev.off()
+	  }
+	)
+	
+	output$btnDownloadCSV <- downloadHandler(
+	  filename = "data.csv",
+	  content = function(file) {
+	    write.csv(ggplot_object$data, file)
+	  }
+	)
 
 	output$hover_info <- renderUI({
     hover <- input$plot_hover
@@ -122,7 +175,7 @@ shinyServer(function(input, output, session) {
         top_px + 2,
         "px;"
       )
-    near_points <- nearPoints(richness_default, hover)
+    near_points <- nearPoints(ggplot_data, hover)
     if(nrow(near_points) > 0){
       if(identical(input$category, "All Samples")){
         category_hover = "SampleName"
