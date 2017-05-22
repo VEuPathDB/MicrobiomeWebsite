@@ -1,24 +1,10 @@
 library(shiny)
 library(shinyjs)
 
-appCSS <- "
-#loading-content {
-position: absolute;
-background: #FFFFFF;
-opacity: 0.9;
-z-index: 100;
-left: 0;
-right: 0;
-height: 100%;
-text-align: center;
-color: #858585;
-}
-"
-
 shinyUI(
 	fluidPage(
 	  useShinyjs(),
-	  inlineCSS(appCSS),
+	  includeCSS("www/style.css"),
 	  # Loading message
 	  div(id = "loading-content",
 	      h5("We are preparing the graphical representation..."),
@@ -30,7 +16,7 @@ shinyUI(
 	      id = "app-content",
 	  fluidRow(
 	    column(5, 
-	           checkboxGroupInput("measureCheckBox", label="Measure(s):",
+	           checkboxGroupInput("measureCheckBox", label="Measure(s)",
 	                              choices = c("Chao1" = "Chao1",
 	                                          "ACE" = "ACE",
 	                                          "Shannon" = "Shannon",
@@ -40,16 +26,45 @@ shinyUI(
 	           div(style = "display: none;",
 	               checkboxInput("taxa_are_rows", label = "", value = T) )
 	    ),
-	    column(7,
-	           radioButtons("plotTypeRadio", label="Visualization type:",
+	    column(3,
+	           radioButtons("plotTypeRadio", label="Visualization type",
 	                        choices = c("Boxplot" = "boxplot",
 	                                    "Dot plot" = "dotplot"),
 	                        selected = c("boxplot"), inline=T)
+	    ),
+	    column(4,
+	           div(
+	             style = "",
+	             fluidRow(
+	               strong("Download")
+	             ),
+	             fluidRow(
+	               div(
+	                 style = "padding-top: 0.45em;",
+	                 downloadButton("btnDownloadPNG", class="btnToolbar", label = "", tooltip="Download plot as PNG"),
+	                 downloadButton("btnDownloadSVG", class="btnToolbar", label = "", tooltip="Download plot as SVG"),
+	                 downloadButton("btnDownloadEPS", class="btnToolbar", label = "", tooltip="Download plot as EPS"),
+	                 downloadButton("btnDownloadCSV", class="btnToolbar", label = "", tooltip="Download data as CSV")
+	               )
+	             ) 
+	           )
 	    )
 	  ),
 	  fluidRow(
 	    column(6,
-	           uiOutput("category")
+	           # uiOutput("category")
+	           selectizeInput(
+	             "category",
+	             choices = NULL,
+	             label = "Split by metadata",
+	             options = list(placeholder = 'Loading...'),
+	             width = "100%"
+	           )
+	    )
+	  ),
+	  fluidRow(
+	    column(12,
+	           uiOutput("result_tests", class="shell-wrap")
 	    )
 	  ),
 	  fluidRow(

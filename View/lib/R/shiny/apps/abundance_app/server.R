@@ -5,6 +5,7 @@ library(phyloseq)
 library(data.table)
 source("config.R")
 source("../../lib/wdkDataset.R")
+source("facet_even.R")
 source("functions.R")
 
 shinyServer(function(input, output, session) {
@@ -80,10 +81,10 @@ shinyServer(function(input, output, session) {
       }
       columns <<- new_columns
       
-      updateSelectizeInput(session, "category", 
+      updateSelectizeInput(session, "category",
                            choices = c("All Samples", columns[2:length(columns)]),
                            selected = "All Samples",
-                           options = list(placeholder = 'Type the category to split'),
+                           options = list(placeholder = 'Choose metadata to split the chart'),
                            server = TRUE)
       
     }
@@ -118,7 +119,7 @@ shinyServer(function(input, output, session) {
     abundance_otu <<- df_abundance.formatted[,column_otu:ncol(df_abundance.formatted)]
     
     highest_otu <- get_n_abundant_overall(number_of_taxa, abundance_otu)
-    
+
     rows_to_maintain <- rownames(highest_otu)
     if(nrow(abundance_otu) > number_of_taxa){
       filtered_abundance_otu <- abundance_otu[rows_to_maintain,]
@@ -135,7 +136,7 @@ shinyServer(function(input, output, session) {
     
     if(nrow(abundance_otu) > number_of_taxa){
       filtered_abundance_taxa <- abundance_taxa[rows_to_maintain,]
-      filtered_abundance_taxa<-rbind(filtered_abundance_taxa, rep("remainder", ncol(filtered_abundance_taxa)))
+      filtered_abundance_taxa<-rbind(filtered_abundance_taxa, rep("Other", ncol(filtered_abundance_taxa)))
     }else{
       filtered_abundance_taxa<-abundance_taxa
     }
@@ -167,6 +168,140 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  output$btnDownloadPNG <- downloadHandler(
+    filename = "plot.png",
+    content = function(file) {
+      png(file, width=1200,height=800,units="px")
+      if(identical(input$tabs, "bySample")){
+        print(ggplot_object)
+      }else{
+        print(ggplot_by_otu_object)
+      }
+      dev.off()
+    }
+  )
+  
+  output$btnDownloadEPS <- downloadHandler(
+    filename = "plot.eps",
+    content = function(file) {
+      setEPS()
+      postscript(file, width=16,height=10.67, family = "Palatino")
+      if(identical(input$tabs, "bySample")){
+        print(ggplot_object)
+      }else{
+        print(ggplot_by_otu_object)
+      }
+      dev.off()
+    }
+  )
+  
+  output$btnDownloadSVG <- downloadHandler(
+    filename = "plot.svg",
+    content = function(file) {
+      svg(file, width=16,height=10.67)
+      if(identical(input$tabs, "bySample")){
+        print(ggplot_object)  
+      }else{
+        print(ggplot_by_otu_object)
+      }
+      
+      dev.off()
+    }
+  )
+  
+  output$btnDownloadCSV <- downloadHandler(
+    filename = "data.csv",
+    content = function(file) {
+      if(identical(input$tabs, "bySample")){
+        write.csv(ggplot_object$data, file)
+      }else{
+        write.csv(ggplot_by_otu_object$data, file)
+      }
+    }
+  )
+  
+  # observeEvent(input$tabs, {
+  #   if(identical(input$tabs, "bySample")){
+  #     output$by_otu_datatable <- renderDataTable(NULL)
+  #     # output$chartByOTU<-renderPlot(NULL)
+  #   }
+  # })
+  
+  # observeEvent(input$btnRunAnalysis, {
+  #   if(identical(input$tabs, "byOTU")){
+  #     if(!identical(input$category, "All Samples")){
+  #       quantity <- gsub("^(.+)\\s\\((\\d+)\\)$", "\\2", input$category, perl=T)
+  #       quantity<-as.numeric(quantity)
+  #       if(quantity==2){
+  #         print("run wilcoxon")
+  #       }else{
+  #         print("run kruskal-wallis")
+  #       }
+  #     }
+  #   }else{
+  #     
+  #   }
+  # }) 
+  
+  runWilcoxon <- function(){
+    physeqobj<-physeq()
+    
+    filtered_taxa <- abundance_taxa[abundance_taxa[,input$taxonLevel] == input$filterOTU,]
+    filtered_otu <- abundance_otu[rownames(filtered_taxa),]
+    if(nrow(filtered_otu)>0){
+      abundance<-as.data.frame(t(filtered_otu))
+      colnames(abundance)<-"Abundance"
+      abundance$Sample<-rownames(abundance)
+      
+      metadata<-sample_data(physeqobj)[,c(hash_sample_names[[hash_count_samples[[input$category]]]])]
+      metadata<-data.frame(Sample=rownames(metadata), metadata[,hash_sample_names[[hash_count_samples[[input$category]]]]])
+      
+      abundance_with_metadata<-merge(metadata, abundance, by="Sample")
+      
+      result<-wilcox.test(abundance_with_metadata[,"Abundance"]~abundance_with_metadata[,hash_sample_names[[hash_count_samples[[input$category]]]]], conf.int = T, conf.level = 0.95) 
+      result
+    }
+  }
+  
+  runKruskal <- function(){
+    physeqobj<-physeq()
+    filtered_taxa <- abundance_taxa[abundance_taxa[,input$taxonLevel] == input$filterOTU,]
+    filtered_otu <- abundance_otu[rownames(filtered_taxa),]
+    if(nrow(filtered_otu)>0){
+      abundance<-as.data.frame(t(filtered_otu))
+      colnames(abundance)<-"Abundance"
+      abundance$Sample<-rownames(abundance)
+      
+      metadata<-sample_data(physeqobj)[,c(hash_sample_names[[hash_count_samples[[input$category]]]])]
+      metadata<-data.frame(Sample=rownames(metadata), metadata[,hash_sample_names[[hash_count_samples[[input$category]]]]])
+      
+      abundance_with_metadata<-merge(metadata, abundance, by="Sample")
+      
+      result<-kruskal.test(abundance_with_metadata[,hash_sample_names[[hash_count_samples[[input$category]]]]] ~ abundance_with_metadata[,"Abundance"])
+      result
+    }
+  }
+  
+  output$result_tests <-renderUI({
+    html_formatted<-""
+    if(!identical(input$category, "") &!identical(input$category, "All Samples") ){
+      if(identical(input$tabs, "byOTU") & !identical(input$filterOTU, "") ){
+        quantity <- gsub("^(.+)\\s\\((\\d+)\\)$", "\\2", input$category, perl=T)
+        quantity<-as.numeric(quantity)
+        if(quantity==2){
+          result<-runWilcoxon()
+          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Wilcoxon rank sum test: W = %f, p-value = %.8f</li></ul>",
+                       result$statistic, result$p.value))
+        }else{
+          result<-runKruskal()
+          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
+                       result$statistic, result$parameter, result$p.value))
+        }
+      }
+    }
+    html_formatted
+  })
+  
   output$otuPlotWrapper <- renderPlot({
     taxon_level <- input$taxonLevel
     otu_picked <- input$filterOTU
@@ -174,12 +309,15 @@ shinyServer(function(input, output, session) {
       if(is.null(hash_colors)){
         cbPalette <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a","#ffff99", "#b15928")
         random_color<-sample(cbPalette)
-        cbPalette <- c(random_color[1], "#858585")
+        cbPalette <- c(random_color[1], "#363636")
+        # cbPalette <- c(random_color[1], "white")
       }else{
         if(is.na(match(otu_picked, names(hash_colors)))){
-          cbPalette <- c(hash_colors[["remainder"]], "#858585")
+          cbPalette <- c(hash_colors[["Other"]], "#363636")
+          # cbPalette <- c(hash_colors[["Other"]], "white")
         }else{
-          cbPalette <- c(hash_colors[[otu_picked]], "#858585")
+          cbPalette <- c(hash_colors[[otu_picked]], "#363636")
+          # cbPalette <- c(hash_colors[[otu_picked]], "white")
         }
       }
       line_match <- match(otu_picked, abundance_taxa[,taxon_level])
@@ -223,35 +361,63 @@ shinyServer(function(input, output, session) {
 
         # returning the plot
         filtered_otu <- rbind(filtered_otu, 1-filtered_otu)
-        filtered_taxa<-rbind(filtered_taxa, "zzzremainder")
+        filtered_taxa<-rbind(filtered_taxa, "zzzother")
 
         rownames(filtered_taxa)<-filtered_taxa[,input$taxonLevel]
         rownames(filtered_otu)<-filtered_taxa[,input$taxonLevel]
         
         phy <- phyloseq(otu_table(filtered_otu, taxa_are_rows=T), tax_table(as.matrix(filtered_taxa)), SAMPLE)
         if(identical(input$category, "All Samples")){
+          shinyjs::hide("result_tests")
+          # my_title<-sprintf("Relative abundance of %s %s for each sample", otu_picked, tolower(input$taxonLevel))
           chart<-plot_bar(phy,fill = taxon_level)+
-            geom_bar(position = position_stack(reverse = TRUE), stat = "identity")+
+            geom_bar(position = position_stack(reverse = TRUE), stat = "identity", color="black")+
             theme(
-              axis.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=13),
+              # plot.title = element_text(family = "Trebuchet MS", color="#666666", face = "bold", size=20, hjust = 0.5),
+              axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+              legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
+              legend.key.size = unit(x = 1.5, units = "char"),
+              axis.text.x = element_text(angle = 0, hjust = 0.5),
               axis.text.y=element_blank(),
-              axis.ticks.y = element_blank()
+              axis.ticks.y = element_blank(),
+              text = element_text(family = "Palatino", size=13, face="bold", color="black")
             )+
-            scale_fill_manual(values=cbPalette, labels=c(otu_picked, "Remainder OTUs"))+
-            labs(x="Samples", y=paste(otu_picked,"Abundance"))+
+            scale_fill_manual(values=cbPalette, labels=c(otu_picked, "Other"), name="")+
+            labs(x="Samples", y=paste(otu_picked,"Relative Abundance"))+
+            # ggtitle(as.formula(paste("~ underline(\"", my_title, "\")"))) +
             coord_flip(expand=F)
         }else{
+          shinyjs::show("result_tests")
+          # my_title<-sprintf("Relative abundance of %s %s for each sample under %s", otu_picked, tolower(input$taxonLevel) ,hash_count_samples[[input$category]])
+          # if(nchar(my_title)<90){
+          #   hj <- 0.5
+          #   s<-20
+          # }else{
+          #   hj <- 0
+          #   s<-18
+          # }
           chart<-plot_bar(phy, fill = taxon_level)+
-            geom_bar(position = position_stack(reverse = TRUE), stat = "identity")+
-            facet_grid(as.formula(paste(hash_sample_names[[hash_count_samples[[input$category]]]], "~ .")), scale='free_y', space="free_y")+
+            geom_bar(position = position_stack(reverse = TRUE), stat = "identity", color="black")+
+            facet_even(as.formula(paste("~ ",hash_sample_names[[hash_count_samples[[input$category]]]])), ncol=1, scales='free_y')+
             theme(
-              axis.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=13),
+              # plot.title = element_text(family = "Trebuchet MS", color="#666666", face = "bold", size=s, hjust = hj),
+              axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+              legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
+              legend.key.size = unit(x = 1.5, units = "char"),
+              axis.text.x = element_text(angle = 0, hjust = 0.5),
               axis.text.y=element_blank(),
-              axis.ticks.y = element_blank()
+              axis.ticks.y = element_blank(),
+              text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+              panel.spacing = unit(0,"cm"),
+              panel.border = element_rect(colour="black", size=1, fill=NA),
+              strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+              strip.background = element_rect(fill="#F3F2F2")
             )+
-            scale_fill_manual(values=cbPalette, labels=c(otu_picked, "Remainder OTUs"))+
-            labs(x="Samples", y=paste(otu_picked,"Abundance"))+
+            scale_fill_manual(values=cbPalette, labels=c(otu_picked, "Other"), name="")+
+            labs(x="Samples", y=paste(otu_picked,"Relative Abundance"))+
+            # ggtitle(as.formula(paste("~ underline(\"", my_title, "\")"))) +
             coord_flip(expand=F)
+          
         }
         ggplot_by_otu_object <<- chart
         ggplot_build_by_otu_object <<- ggplot_build(chart)
@@ -282,9 +448,6 @@ shinyServer(function(input, output, session) {
   output$temporaryImage <- renderImage({
     
     filename <- normalizePath(paste0(getwd(), '/loading.gif'))
-    # print(normalizePath(filename))
-    # filename <- paste0(getwd(), '/trex.jpeg')
-    # Return a list containing the filename and alt text
     list(src = filename,contentType = "image/gif", width = "200", heigth="200",
          alt = paste("blabla"))
   }, deleteFile = F)
@@ -294,29 +457,51 @@ shinyServer(function(input, output, session) {
     
     if(!identical(input$category, "")){
       cbPalette <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a","#ffff99", "#b15928")
-      # cbPalette <- c("#67001f", "#d6604d", "#b2182b", "#fddbc7", "#f4a582", "#d1e5f0", "#f4a582", "#4393c3", "#92c5de", "#053061","#2166ac")
       if(identical(input$category, "All Samples")){
+        # my_title<-sprintf("Relative abundance at %s level for each sample", tolower(input$taxonLevel))
         chart <-
           plot_bar(physeqobj, fill=input$taxonLevel)+
           theme(
-                axis.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=16),
-                axis.text.y=element_blank(),
-                axis.ticks.y = element_blank()
+                # plot.title = element_text(family = "Trebuchet MS", color="#666666", face = "bold", size=20, hjust = 0.5),
+              axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+              legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
+              legend.key.size = unit(x = 1.5, units = "char"),
+              axis.text.x = element_text(angle = 0, hjust = 0.5),
+              axis.text.y=element_blank(),
+              axis.ticks.y = element_blank(),
+              text = element_text(family = "Palatino", size=13, face="bold", color="black")
                 )+
-          scale_fill_manual(values=cbPalette, name="Top Overall Abundances")+
-          labs(x="Samples", y="OTU Abundance")+
+          scale_fill_manual(values=cbPalette, name="")+
+          labs(x="Samples", y="Phylogenetic Relative Abundance")+
+          # ggtitle(as.formula(paste("~ underline(\"", my_title, "\")"))) +
           coord_flip(expand=F)
       }else{
+        # my_title<-sprintf("Relative abundance at %s level for each sample under %s", tolower(input$taxonLevel), hash_count_samples[[input$category]])
+        # if(nchar(my_title)<90){
+        #   hj <- 0.5
+        # }else{
+        #   hj <- 0.1
+        # }
 				chart <-
 				  plot_bar(physeqobj, fill=input$taxonLevel)+
-				  facet_grid(as.formula(paste(hash_sample_names[[hash_count_samples[[input$category]]]], "~ .")), scale='free_y', space="free_y")+
+				  facet_even(as.formula(paste("~ ",hash_sample_names[[hash_count_samples[[input$category]]]])), ncol=1, scales='free_y')+
 				  theme(
-				        axis.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=16),
-				        axis.text.y=element_blank(),
-				        axis.ticks.y = element_blank()
+				        # plot.title = element_text(family = "Trebuchet MS", color="#666666", face = "bold", size=20, hjust = hj),
+    				    axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+    				    legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
+    				    legend.key.size = unit(x = 1.5, units = "char"),
+    				    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    				    axis.text.y=element_blank(),
+    				    axis.ticks.y = element_blank(),
+    				    text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+				        panel.spacing = unit(0,"cm"),
+				        panel.border = element_rect(colour="black", size=1, fill=NA),
+				        strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+				        strip.background = element_rect(fill="#F3F2F2")
 				        )+
-				  scale_fill_manual(values=cbPalette, name="Top Overall Abundances")+
-				  labs(x="Samples", y="OTU Abundance")+
+				  scale_fill_manual(values=cbPalette, name="")+
+				  labs(x="Samples", y="Phylogenetic Relative Abundance")+
+				  # ggtitle(as.formula(paste("~ underline(\"", my_title, "\")"))) +
 				  coord_flip(expand=F)
       }
       
@@ -330,6 +515,10 @@ shinyServer(function(input, output, session) {
     chart
   })
   
+  # wrapper <- function(x, ...) 
+  # {
+  #   paste(strwrap(x, ...), collapse = "\n")
+  # }
   output$hoverByOTU <- renderUI({
     hover <- input$plot_hoverByOTU
     lvls <- rownames(sample_data(physeq()))
@@ -361,8 +550,9 @@ shinyServer(function(input, output, session) {
       
       hover_data<-subset(ggplot_by_otu_object$data, Sample==hover_sample)
       
-      otu_abundance<-subset(hover_data, Kingdom!="zzzremainder")
-      other_abundance<-subset(hover_data, Kingdom=="zzzremainder")
+      otu_abundance<-subset(hover_data, Kingdom!="zzzother")
+      other_abundance<-subset(hover_data, Kingdom=="zzzother")
+      
       if(hover$x<=otu_abundance[1,"Abundance"]){
         wellPanel(style = style,
                   tags$b("Sample: "),
@@ -380,7 +570,7 @@ shinyServer(function(input, output, session) {
                   hover_sample,
                   br(),
                   tags$b(paste(input$taxonLevel, ": ")),
-                  "Remainder OTUs",
+                  "Other",
                   br(),
                   tags$b("Abundance: "),
                   other_abundance[1,"Abundance"]
@@ -394,11 +584,11 @@ shinyServer(function(input, output, session) {
         lvls <- ggplot_build_by_otu_object$layout$panel_ranges[[panel_index]]$y.labels
         hover_sample <- lvls[round(hover$y)]
         hover_data<-subset(ggplot_by_otu_object$data, Sample==hover_sample & Abundance>0)
-        otu_abundance<-subset(hover_data, Kingdom!="zzzremainder")
-        other_abundance<-subset(hover_data, Kingdom=="zzzremainder")
-        
-        if(hover$x <= otu_abundance[1,"Abundance"]){
-          wellPanel(style = style,
+        otu_abundance<-subset(hover_data, Kingdom!="zzzother")
+        other_abundance<-subset(hover_data, Kingdom=="zzzother")
+        if(nrow(otu_abundance)>0){
+          if(hover$x <= otu_abundance[1,"Abundance"]){
+            wellPanel(style = style,
                       tags$b("Sample: "),
                       hover_sample,
                       br(),
@@ -411,6 +601,21 @@ shinyServer(function(input, output, session) {
                       tags$b("Abundance: "),
                       otu_abundance[1, "Abundance"]
             )
+          }else{
+            wellPanel(style = style,
+                      tags$b("Sample: "),
+                      hover_sample,
+                      br(),
+                      tags$b("Category: "),
+                      hover$panelvar1,
+                      br(),
+                      tags$b(paste(input$taxonLevel, ": ")),
+                      "Other",
+                      br(),
+                      tags$b("Abundance: "),
+                      other_abundance[1, "Abundance"]
+            )
+          }
         }else{
           wellPanel(style = style,
                     tags$b("Sample: "),
@@ -420,12 +625,13 @@ shinyServer(function(input, output, session) {
                     hover$panelvar1,
                     br(),
                     tags$b(paste(input$taxonLevel, ": ")),
-                    "Remainder OTUs",
+                    "Other",
                     br(),
                     tags$b("Abundance: "),
-                    other_abundance[1, "Abundance"]
-          )
+                    1
+          ) 
         }
+        
       }else{
         return(NULL)
       }
@@ -630,12 +836,15 @@ shinyServer(function(input, output, session) {
     raw_data<-subset(raw_data, Abundance>0)
     raw_data$Abundance<-format(raw_data$Abundance, scientific = F)
     colnames(raw_data)<-c("Sample",input$taxonLevel, "Relative Abundance")
+    raw_data[,input$taxonLevel] <- paste0("<a class='link_table' onclick='goToOtuTab(\"",raw_data[,input$taxonLevel],"\")'>",raw_data[,input$taxonLevel],"</a>")
     output$by_sample_datatable <- renderDataTable(raw_data,
+                                                  escape = F,
                                             options = list(
                                               order = list(list(2, 'desc'),list(1, 'asc'))
                                               )
                                             )
   })
+  
   shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
   shinyjs::show("app-content")
 })

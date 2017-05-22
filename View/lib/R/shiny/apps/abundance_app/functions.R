@@ -127,8 +127,8 @@ join_abundance <- function(array_abundance, data_from_chart){
     abi <- array_abundance[i]
     line_to_remove <- 0
     for(j in 1:nrow(data_from_chart)){
-      abj <- data_from_chart[j,"Abundance"]
-      if(isTRUE(all.equal(abi,abj))){
+      abj <- data_from_chart[["Abundance"]][j]
+      if(isTRUE(all.equal.numeric(abi, abj))){
         df_to_return <- rbind(df_to_return, data_from_chart[j,])
         line_to_remove = j
         break
