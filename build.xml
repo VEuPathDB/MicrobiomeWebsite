@@ -4,17 +4,36 @@
   <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <import file="${projectsDir}/ApiCommonWebsite/build.xml" />
-
+  <import file="${projectsDir}/EbrcWebSvcCommon/build.xml" />
+  <import file="${projectsDir}/MicrobiomeModel/build.xml" />
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo    Checkout    oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeWebsite-ChildCheckout">
-    <available file="${projectsDir}/ApiCommonWebsite" type="dir"  property="ApiCommonWebsite.present" />
-    <antcall target="ApiCommonWebsite-Checkout"/>
+    <available file="${projectsDir}/EbrcWebSvcCommon" type="dir"  property="EbrcWebSvcCommon.present" />
+    <available file="${projectsDir}/MicrobiomeModel" type="dir"  property="MicrobiomeModel.present" />
+    <antcall target="EbrcWebSvcCommon-Checkout"/>
+    <antcall target="Microbiome-Checkout"/>
   </target>
+
+  <target name="EbrcWebSvcCommon-Checkout" unless="EbrcWebSvcCommon.present">
+    <ant target="defaultProjectCheckout" inheritAll="false">
+      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/apidb/EbrcWebSvcCommon"/>
+      <property name="project" value="EbrcWebSvcCommon"/>
+      <property name="version" value="??"/>
+    </ant>
+  </target>
+
+  <target name="MicrobiomeModel-Checkout" unless="MicrobiomeModel.present">
+    <ant target="defaultProjectCheckout" inheritAll="false">
+      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/apidb/MicrobiomeModel"/>
+      <property name="project" value="MicrobiomeModel"/>
+      <property name="version" value="api-build-9"/>
+    </ant>
+  </target>
+
 
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
@@ -22,9 +41,13 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeWebsite-ChildUpdate" >
-     <ant target="defaultProjectUpdate">
-      <property name="project" value="ApiCommonWebsite"/>
+    <ant target="defaultProjectUpdate">
+      <property name="project" value="EbrcWebSvcCommon"/>
     </ant>
+     <ant target="defaultProjectUpdate">
+      <property name="project" value="MicrobiomeModel"/>
+    </ant>
+
   </target>
 
 
@@ -32,19 +55,47 @@
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <target name="MicrobiomeWebsite-Installation" depends="ApiCommonWebsite-Installation">
+  <target name="MicrobiomeWebsite-Installation" depends="EbrcWebSvcCommon-Installation,
+                                                       MicrobiomeModel-Installation,
+                                                       MicrobiomeWebsite/View-Installation,
+                                                       MicrobiomeWebsite/Site-Installation">
     <ant target="defaultProjectInstall">
       <property name="project" value="MicrobiomeWebsite"/>
     </ant>
   </target>
 
+<!-- Added START-->
+<!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
+  <target name="MicrobiomeWebsite/Model--Installation">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="Model"/>
+    </ant>
+  </target>  
+
+  <target name="MicrobiomeWebsite/Site-Installation">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="Site"/>
+    </ant>
+  </target>
+
+  <target name="MicrobiomeWebsite/View-Installation">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="View"/>
+    </ant>
+  </target>
+
+<!-- Added  END-->
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <target name="MicrobiomeWebsite-WebInstallation" depends="EbrcWebsiteCommon-WebInstallation,
-                                                              MicrobiomeWebsite-Installation,
-                                                              MicrobiomeWebsite/Site-WebInstallation">
+  <target name="MicrobiomeWebsite-WebInstallation" depends="EbrcWebSvcCommon-WebInstallation,
+                                                            MicrobiomeWebsite-Installation,
+                                                            MicrobiomeWebsite/View-WebInstallation,
+                                                            MicrobiomeWebsite/Site-WebInstallation">
   </target>
 
   <target name="MicrobiomeWebsite/Site-WebInstallation">
@@ -53,6 +104,21 @@
       <property name="component" value="Site"/>
     </ant>
   </target>
+
+  <target name="MicrobiomeWebsite/View-WebInstallation">
+
+    <ant target="defaultComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="View"/>
+    </ant>
+    
+    <ant target="defaultWebComponentInstall">
+      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="component" value="View"/>
+    </ant>
+    
+  </target>
+
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooo  Release  ooooooooooooooooooooooooooooo -->

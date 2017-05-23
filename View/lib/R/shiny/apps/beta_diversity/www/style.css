@@ -1,0 +1,103 @@
+#loading-content {
+position: absolute;
+background: #FFFFFF;
+opacity: 0.9;
+z-index: 100;
+left: 0;
+right: 0;
+height: 100%;
+text-align: center;
+color: #858585;
+}
+
+.btnToolbar {
+  width: 32px;
+  height: 32px;
+  cursor:pointer;
+  border: none;
+}
+
+.fa-download:before{
+  content:"";
+}
+
+#btnDownloadPNG {
+  background:url("005-png.png") no-repeat;
+}
+
+.btnToolbar[tooltip]:hover:after {
+  content: attr(tooltip);
+  padding: 4px 8px;
+  color: #333;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 20;
+  white-space: nowrap;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  -moz-box-shadow: 0px 0px 4px #222;
+  -webkit-box-shadow: 0px 0px 4px #222;
+  box-shadow: 0px 0px 4px #222;
+  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc));
+  background-image: -webkit-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -ms-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -o-linear-gradient(top, #eeeeee, #cccccc);
+}
+
+#btnDownloadEPS {
+  background:url("001-eps.png") no-repeat;
+}
+
+#btnDownloadSVG {
+  background:url("004-svg.png") no-repeat;
+}
+
+#btnDownloadCSV {
+  background:url("002-csv.png") no-repeat;
+}
+
+/* shell http://www.codechewing.com/library/mac-terminal-shell-css-html/ */
+#result_tests{
+  width: 100%;
+}
+
+.shell-wrap {
+  width: 500px;
+  margin: 0 auto 0 auto;
+}
+ 
+.shell-body {
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  background: #141414;
+  color: #45D40C;
+  font: 0.8em 'Andale Mono', Consolas, 'Courier New';
+  line-height: 1.6em;
+ 
+  -webkit-border-bottom-right-radius: 3px;
+  -webkit-border-bottom-left-radius: 3px;
+  -moz-border-radius-bottomright: 3px;
+  -moz-border-radius-bottomleft: 3px;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+ 
+.shell-body li:before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+ 
+.shell-body li {
+  word-wrap: break-word;
+  position: relative;
+  padding: 0 0 0 15px;
+}
+
+
