@@ -90,8 +90,6 @@ shinyServer(function(input, output, session) {
           geom_point(size = 4, alpha= 0.5)+
           theme(
             axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-            axis.text.x = element_blank(),
-            axis.ticks.x =  element_blank(),
             text = element_text(family = "Palatino", size=13, face="bold", color="black"),
             legend.position="none"
           )

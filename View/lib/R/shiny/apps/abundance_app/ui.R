@@ -2,16 +2,21 @@
 library(shiny)
 library(shinyjs)
 
+jsCode <- "shinyjs.shinyScrollTo = function(id){
+    window.scrollTo(0, document.getElementById(id).offsetTop);
+}"
+
 # The shiny ui function build the HTML final page showed in the shiny app
 shinyUI(
   fluidPage(
     useShinyjs(),
     includeCSS("www/style.css"),
     includeScript("www/script.js"),
+    # extendShinyjs(text = jsCode),
     # Loading message
     div(id = "loading-content",
-        h5("We are preparing the graphical representation..."),
-        img(src = "loading.gif")
+        h5("Preparing the graphical representation..."),
+        img(src = "new_loading.gif")
     ),
     # The main app code goes here
     hidden(
@@ -58,7 +63,7 @@ shinyUI(
                   downloadButton("btnDownloadEPS", class="btnToolbar", label = "", tooltip="Download plot as EPS"),
                   downloadButton("btnDownloadCSV", class="btnToolbar", label = "", tooltip="Download data as CSV")
                 )
-              ) 
+              )
             )
           )
          ),
@@ -66,33 +71,52 @@ shinyUI(
        tabsetPanel(
          id = "tabs",
          tabPanel(
+           id="firstTab",
            title = "Overview",
            value = "bySample",
            fluidRow(column(
              12,
              div(style = "position:relative",
-                 uiOutput("abundanceChart"),
+                 # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
+                   uiOutput("abundanceChart"),
+                   # ),
                  uiOutput("hover_info"))
            )),
            fluidRow(column(
              12,
-             dataTableOutput("by_sample_datatable")
+               dataTableOutput("by_sample_datatable")
            ))
-         ),
+         ), # end tabPanel bySample
          tabPanel(
-           title = "Single OTU Comparison",
+           title = "Top OTU Comparison",
+           value = "byTopOTU",
+           fluidRow(
+             column(12,
+                    # div(style = "position:relative",
+                    uiOutput("chartByTopOTU"),
+                    uiOutput("hoverByTopOTU")
+                    # )
+             )),
+           fluidRow(
+             column(12,
+                    DT::dataTableOutput("by_top_otu_datatable")
+             )
+           )
+         ),# end tabPabel byTopOTU
+         tabPanel(
+           title = "Single OTU",
            value = "byOTU",
            fluidRow(
              column(
-             12,
-                selectizeInput(
+               12,
+                 selectizeInput(
                    "filterOTU",
                    choices = NULL,
-                   label = "Search OTU:",
+                   label = "Search OTU",
                    width = "100%",
                    options = list(placeholder = 'Loading...')
                  )
-              )
+             )
             ),
            fluidRow(
              column(
@@ -102,10 +126,11 @@ shinyUI(
            ),
            fluidRow(
              column(12,
+                    # div(style = "position:relative",
                       uiOutput("chartByOTU"),
                       uiOutput("hoverByOTU")
-                    )
-                  ),
+                    # )
+                  )),
            fluidRow(column(
              12,
              dataTableOutput("by_otu_datatable")
