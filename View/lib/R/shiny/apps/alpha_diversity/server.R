@@ -104,134 +104,190 @@ shinyServer(function(input, output, session) {
   
   output$abundanceChart <- renderPlot({
     category<-input$category
-    if(!identical(category, "")){
-      physeqobj <- physeq()
-      measures<-input$measureCheckBox
-      if(length(measures)>0){
-        if(identical(category, "All Samples")){
-          if(identical(input$plotTypeRadio, "dotplot")){
-            chart <- plot_richness(physeqobj, measures = measures)+
-              geom_point(size = 4, alpha= 0.5)+coord_fixed()+
-              theme(
-                axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-                axis.text.x = element_blank(),
-                axis.ticks.x =  element_blank(),
-                text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                panel.border = element_rect(colour="black", size=1, fill=NA),
-                strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                strip.background = element_rect(fill="#F3F2F2")
-              )+
-              labs(x="All Samples", y="Alpha Diversity Measure")
-          }else{
-            rich <- estimate_richness(physeqobj, measures = measures)
-            rich$SampleName <- gsub("\\.", "\\-", rownames(rich))
-            data_melted<-melt(rich, id.vars = c("SampleName"),  measure.vars=measures)
-            
-            abundance_otu <<- data_melted
-            # print(str(data_melted))
-            chart<-ggplot(data_melted, aes(variable, value))+geom_boxplot()+
-              facet_wrap(~ variable, scales="free")+
-              theme(
-                axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-                axis.text.x = element_blank(),
-                axis.ticks.x =  element_blank(),
-                text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                panel.border = element_rect(colour="black", size=1, fill=NA),
-                strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                strip.background = element_rect(fill="#F3F2F2")
-              )+
-              labs(x="All Samples", y="Alpha Diversity Measure")
-          }
-        }else{
-          category_column<-hash_sample_names[[hash_count_samples[[category]]]]
-          if(identical(input$plotTypeRadio, "dotplot")){
-            chart <- plot_richness(physeqobj, x=category_column, measures = measures)+
-              theme(
-                axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-                axis.text.x = element_text(angle = 0, hjust = 0.5),
-                text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                panel.border = element_rect(colour="black", size=1, fill=NA),
-                strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                strip.background = element_rect(fill="#F3F2F2")
-                )+
-              # scale_x_discrete(labels = abbreviate)+
-              geom_point(size = 4, alpha= 0.5) 
-          }else{
-            rich <- estimate_richness(physeqobj, measures = measures)
-            rich$SampleName <- gsub("\\.", "\\-", rownames(rich))
-            
-            df_sample_selected <- df_sample.formatted[,c("SampleName", category_column)]
-            richness_merged <- merge(df_sample_selected, rich, by.x = "SampleName", by.y = "SampleName")
-            
-            data_melted<-melt(richness_merged, id.vars = c("SampleName", category_column),  measure.vars=measures)
-            abundance_otu<<-data_melted
-            
-            chart<-ggplot(data_melted, aes_string(x=category_column, y="value", group=category_column))+geom_boxplot()+
-              facet_wrap(as.formula("~ variable "), scales = "free_y", ncol = 2)+
-              theme(
-                axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-                axis.text.x = element_text(angle = 0, hjust = 0.5),
-                text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                panel.border = element_rect(colour="black", size=1, fill=NA),
-                strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
-                strip.background = element_rect(fill="#F3F2F2")
-              )+
-              # scale_x_discrete(labels = abbreviate)+
-              labs(x=stringi::stri_trans_totitle(hash_count_samples[[category]]), y="Alpha Diversity Measure")
-          }
-        }
-        ggplot_object<<-chart
-        ggplot_data <<- chart$data
-        ggplot_build_object <<- ggplot_build(chart) 
-      }else{
-        updateCheckboxGroupInput(session, "measureCheckBox", selected = c("Shannon"))
-        chart<- NULL
-        ggplot_data<<-NULL
-        ggplot_data <<- NULL
-        ggplot_build_object<<-NULL
-      }
-    }else{
-      chart <- NULL
+    measures<-input$measureCheckBox
+    if(identical(category, "")){
+      return(NULL)
     }
+    if(length(measures)==0){
+      updateCheckboxGroupInput(session, "measureCheckBox", selected = c("Shannon"))
+      chart<- NULL
+      ggplot_data<<-NULL
+      ggplot_data <<- NULL
+      ggplot_build_object<<-NULL
+      return(NULL)
+    }
+    plotRadio <- input$plotTypeRadio
+    physeqobj <- physeq()
+    if(identical(category, "All Samples")){
+      shinyjs::hide("result_tests")
+      output$result_tests <- renderUI(NULL)
+      if(identical(plotRadio, "dotplot")){
+        chart <- plot_richness(physeqobj, measures = measures)+
+          geom_point(size = 4, alpha= 0.5)+coord_fixed()+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            axis.text.x = element_blank(),
+            axis.ticks.x =  element_blank(),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            panel.border = element_rect(colour="black", size=1, fill=NA),
+            strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            strip.background = element_rect(fill="#F3F2F2")
+          )+
+          labs(x="All Samples", y="Alpha Diversity Measure")
+      }else{
+        
+        rich <- estimate_richness(physeqobj, measures = measures)
+        rich$SampleName <- gsub("\\.", "\\-", rownames(rich))
+        data_melted<-melt(rich, id.vars = c("SampleName"),  measure.vars=measures)
+        
+        abundance_otu <<- data_melted
+        # print(str(data_melted))
+        chart<-ggplot(data_melted, aes(variable, value))+geom_boxplot()+
+          facet_wrap(~ variable, scales="free")+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            axis.text.x = element_blank(),
+            axis.ticks.x =  element_blank(),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            panel.border = element_rect(colour="black", size=1, fill=NA),
+            strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            strip.background = element_rect(fill="#F3F2F2")
+          )+
+          labs(x="All Samples", y="Alpha Diversity Measure")
+      }
+    } # end if(identical(category, "All Samples")){
+    else{
+      category_column<-hash_sample_names[[hash_count_samples[[category]]]]
+      if(identical(plotRadio, "dotplot")){
+        chart <- plot_richness(physeqobj, x=category_column, measures = measures)+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            axis.text.x = element_text(angle = 0, hjust = 0.5),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            panel.border = element_rect(colour="black", size=1, fill=NA),
+            strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            strip.background = element_rect(fill="#F3F2F2")
+            )+
+          # scale_x_discrete(labels = abbreviate)+
+          geom_point(size = 4, alpha= 0.5)
+        # output$result_tests <- renderUI("riariariaria")
+      } # end if dotplot
+      else{
+        rich <- estimate_richness(physeqobj, measures = measures)
+        rich$SampleName <- gsub("\\.", "\\-", rownames(rich))
+        
+        df_sample_selected <- df_sample.formatted[,c("SampleName", category_column)]
+        richness_merged <- merge(df_sample_selected, rich, by.x = "SampleName", by.y = "SampleName")
+        
+        data_melted<-melt(richness_merged, id.vars = c("SampleName", category_column),  measure.vars=measures)
+        abundance_otu<<-data_melted
+        
+        chart<-ggplot(data_melted, aes_string(x=category_column, y="value", group=category_column))+geom_boxplot()+
+          facet_wrap(as.formula("~ variable "), scales = "free_y", ncol = 2)+
+          theme(
+            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
+            axis.text.x = element_text(angle = 0, hjust = 0.5),
+            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            panel.border = element_rect(colour="black", size=1, fill=NA),
+            strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
+            strip.background = element_rect(fill="#F3F2F2")
+          )+
+          # scale_x_discrete(labels = abbreviate)+
+          labs(x=stringi::stri_trans_totitle(hash_count_samples[[category]]), y="Alpha Diversity Measure")
+      } # end else dotplot
+      
+      quantity <- gsub("^(.+)\\s\\((\\d+)\\)$", "\\2", category, perl=T)
+      quantity<-as.numeric(quantity)
+      
+      if(quantity==2){
+        output$result_tests <- renderUI(format_results(category_column, T, measures, chart$data))
+      }else{
+        output$result_tests <- renderUI(format_results(category_column, F, measures, chart$data))
+      }
+      shinyjs::show("result_tests")
+    } # end else (identical(category, "All Samples")){
+    ggplot_object<<-chart
+    ggplot_data <<- chart$data
+    ggplot_build_object <<- ggplot_build(chart)
+    
     output$sample_subset <- renderDataTable(NULL)
     chart
   })
   
-  output$result_tests <-renderUI({
+  
+  format_results <- function(category,wilcoxon, measures, gg_data){
     html_formatted<-""
-    measures<-input$measureCheckBox
-    if(!identical(input$category, "") & !identical(input$category, "All Samples") ){
-      if(length(measures)>0){
-        quantity <- gsub("^(.+)\\s\\((\\d+)\\)$", "\\2", input$category, perl=T)
-        quantity<-as.numeric(quantity)
-        
-        if(quantity==2){
-          html_formatted<-"<ul class=\"shell-body\"> <li>Wilcoxon rank sum test:%s</li></ul>"
-          text <- ""
-          for(i in 1:length(measures)){
-            df<-subset(ggplot_data, variable==measures[i])
-            df_to_run <- df[,c(2,4)]
-            result<-wilcox.test(df_to_run[,2] ~ df_to_run[,1])
-            text<-paste0(text, sprintf("<br>[%s]: W = %f, p-value = %.8f", measures[i], result$statistic, result$p.value))
-          }
-          html_formatted<-HTML(sprintf(html_formatted, text))
-        }else{
-          html_formatted<-"<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test:%s</li></ul>"
-          text <- ""
-          for(i in 1:length(measures)){
-            df<-subset(ggplot_data, variable==measures[i])
-            df_to_run <- df[,c(2,4)]
-            result<-kruskal.test(df_to_run[,1] ~ df_to_run[,2])
-            # print(input$measureCheckBox[i])
-            # print(result)
-            text<-paste0(text, sprintf("<br>[%s]: chi-squared = %f, df = %f, p-value = %.8f", measures[i], result$statistic, result$parameter, result$p.value))
-          }
-          html_formatted<-HTML(sprintf(html_formatted, text))
-        } 
+    
+    if(wilcoxon==T){
+      html_formatted<-"<ul class=\"shell-body\"> <li>Wilcoxon rank sum test:%s</li></ul>"
+      text <- ""
+      
+      for(i in 1:length(measures)){
+        df<-subset(ggplot_data, variable==measures[i])
+        df_to_run <- df[,c(category,"value")]
+        result<-wilcox.test(df_to_run[,2] ~ df_to_run[,1])
+        text<-paste0(text, sprintf("<br>[%s]: W = %f, p-value = %.8f", measures[i], result$statistic, result$p.value))
       }
+      html_formatted<-HTML(sprintf(html_formatted, text))
+    }else{
+      html_formatted<-"<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test:%s</li></ul>"
+      text <- ""
+      for(i in 1:length(measures)){
+        df<-subset(ggplot_data, variable==measures[i])
+        df_to_run <- df[,c(category,"value")]
+        result<-kruskal.test(df_to_run[,1] ~ df_to_run[,2])
+        text<-paste0(text, sprintf("<br>[%s]: chi-squared = %f, df = %f, p-value = %.8f", measures[i], result$statistic, result$parameter, result$p.value))
+      }
+      html_formatted<-HTML(sprintf(html_formatted, text))
     }
     html_formatted
-  })
+  }
+  
+  # output$result_tests <-renderUI({
+  #   html_formatted<-""
+  #   measures<-input$measureCheckBox
+  #   category <- input$category
+  #   if(identical(category, "") || identical(category, "All Samples")){
+  #     return(NULL)
+  #   }
+  #   if(length(measures)==0){
+  #     updateCheckboxGroupInput(session, "measureCheckBox", selected = c("Shannon"))
+  #     chart<- NULL
+  #     ggplot_data<<-NULL
+  #     ggplot_data <<- NULL
+  #     ggplot_build_object<<-NULL
+  #   }
+  #   physeqobj<-physeq()
+  #   
+  #   quantity <- gsub("^(.+)\\s\\((\\d+)\\)$", "\\2", category, perl=T)
+  #   quantity<-as.numeric(quantity)
+  #   
+  #   if(quantity==2){
+  #     html_formatted<-"<ul class=\"shell-body\"> <li>Wilcoxon rank sum test:%s</li></ul>"
+  #     text <- ""
+  #     
+  #     for(i in 1:length(measures)){
+  #       df<-subset(ggplot_data, variable==measures[i])
+  #       df_to_run <- df[,c(2,4)]
+  #       result<-wilcox.test(df_to_run[,2] ~ df_to_run[,1])
+  #       text<-paste0(text, sprintf("<br>[%s]: W = %f, p-value = %.8f", measures[i], result$statistic, result$p.value))
+  #     }
+  #     html_formatted<-HTML(sprintf(html_formatted, text))
+  #   }else{
+  #     html_formatted<-"<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test:%s</li></ul>"
+  #     text <- ""
+  #     for(i in 1:length(measures)){
+  #       df<-subset(ggplot_data, variable==measures[i])
+  #       df_to_run <- df[,c(2,4)]
+  #       result<-kruskal.test(df_to_run[,1] ~ df_to_run[,2])
+  #       # print(input$measureCheckBox[i])
+  #       # print(result)
+  #       text<-paste0(text, sprintf("<br>[%s]: chi-squared = %f, df = %f, p-value = %.8f", measures[i], result$statistic, result$parameter, result$p.value))
+  #     }
+  #     html_formatted<-HTML(sprintf(html_formatted, text))
+  #   }
+  #   html_formatted
+  # })
   
   output$btnDownloadPNG <- downloadHandler(
     filename = "plot.png",

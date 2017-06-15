@@ -7,8 +7,8 @@ shinyUI(
 	  includeCSS("www/style.css"),
 	  # Loading message
 	  div(id = "loading-content",
-	      h5("We are preparing the graphical representation..."),
-	      img(src = "loading.gif")
+	      h5("Preparing the graphical representation..."),
+	      img(src = "new_loading.gif")
 	  ),
 	  # The main app code goes here
 	  hidden(
