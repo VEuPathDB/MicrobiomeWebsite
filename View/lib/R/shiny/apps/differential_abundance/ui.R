@@ -22,7 +22,7 @@ shinyUI(
                   "taxonLevel",
                   label = "Taxonomic level",
                   choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                  selected = "Genus",
+                  selected = "Species",
                   width = '100%'
                 ),
                 # this div is not showed, this is just a workaround to load the files in a reactive environment
@@ -50,62 +50,72 @@ shinyUI(
                        fluidRow(
                          div(
                            style = "padding-top: 0.45em;",
-                           downloadButton("btnDownloadPNG", class="btnToolbar", label = "", tooltip="Download plot as PNG"),
-                           downloadButton("btnDownloadSVG", class="btnToolbar", label = "", tooltip="Download plot as SVG"),
-                           downloadButton("btnDownloadEPS", class="btnToolbar", label = "", tooltip="Download plot as EPS"),
-                           downloadButton("btnDownloadCSV", class="btnToolbar", label = "", tooltip="Download data as CSV")
+                           disabled(downloadButton("btnDownloadPNG", class="btnToolbar", label = "", tooltip="Download plot as PNG")),
+                           disabled(downloadButton("btnDownloadSVG", class="btnToolbar", label = "", tooltip="Download plot as SVG")),
+                           disabled(downloadButton("btnDownloadEPS", class="btnToolbar", label = "", tooltip="Download plot as EPS")),
+                           disabled(downloadButton("btnDownloadCSV", class="btnToolbar", label = "", tooltip="Download data as CSV"))
                          )
                        )
                      )
               )
             ), # end fluidRow 1 toolbar
             # hidden(
-              fluidRow(
-                column(6,
-                       selectizeInput(
-                         "factor1",
-                         choices = NULL,
-                         label = "Factor 1",
-                         options = list(placeholder = 'Loading...'),
-                         width = "100%"
-                       )
-                ),
-                column(6,
-                       selectizeInput(
-                         "factor2",
-                         choices = NULL,
-                         label = "Factor 2",
-                         options = list(placeholder = 'Loading...'),
-                         width = "100%"
-                       )
-                )
-              )# end fluidRow factors
+            div(
+              # style="width: 90%;float:right;",
+                fluidRow(
+                  column(4,
+                         selectizeInput(
+                           "factor1",
+                           choices = NULL,
+                           label = "Factor 1",
+                           options = list(placeholder = 'Loading...'),
+                           width = "100%"
+                         )
+                  ),
+                  column(1,
+                         actionButton("exchangeBtn", style="width: 100%; margin-top: 25px", icon=icon("exchange"), label = "")
+                  ),
+                  column(4,
+                         selectizeInput(
+                           "factor2",
+                           choices = NULL,
+                           label = "Factor 2",
+                           options = list(placeholder = 'Loading...'),
+                           width = "100%"
+                         )
+                  )
+                )# end fluidRow factors
+            ) # div row factors
             # )# end hidden factors
         ), # end div toolbar
-        div(id="chartArea",
-            fluidRow(
-              column(12,
-                     div(
-                       style = "position:relative",
-                       plotOutput("mainChart",
-                                  hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
-                                  click = clickOpts("plot_click"), width = "100%"),
-                       uiOutput("hover_info")
-                     ) 
+         div(id="chartArea",
+          div(id="chartContent",
+              fluidRow(
+                column(12,
+                       div(
+                         style = "position:relative;",
+                         uiOutput("mainChart", style="text-align: center;"),
+                         # plotOutput("mainChart",
+                         #            hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
+                         #            click = clickOpts("plot_click"), width = "100%"),
+                         uiOutput("hover_info")
+                       ) 
+                )
+              ),
+              fluidRow(
+                column(12,
+                       dataTableOutput("datatableOutput")
+                )
               )
             ),
-            fluidRow(
-              column(12,
-                     dataTableOutput("datatableOutput")
-              )
+          hidden(
+            div(id="chartLoading", style="text-align: center;",
+                # br(),br(),br(),br(),
+                h5("Running DESeq2 to calculate differential abundance. This could take a while..."),
+                img(src = "spinner.gif", id = "loading-spinner")
             )
-        ), # end div chart area
-        hidden(
-          div(id="chartAreaLoading",
-              h5("Running DESeq2 to calculate differential abundance. This could take a while..."),
-              img(src = "spinner.gif", id = "loading-spinner")
           )
-        )
+         ) # end div chart area
       ) # end div id = "app-content",
     ) # end hidden
   ) # end fluidPage

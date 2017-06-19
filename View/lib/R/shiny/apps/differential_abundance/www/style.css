@@ -1,6 +1,6 @@
 #loading-spinner {
   position: absolute;
-  left: 30%;
+  left: 50%;
   top: 30%;
   z-index: -1;
   margin-top: -33px;  /* half of the spinner's height */
