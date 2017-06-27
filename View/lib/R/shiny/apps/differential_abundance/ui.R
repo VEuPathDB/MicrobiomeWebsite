@@ -8,7 +8,7 @@ shinyUI(
     # Loading message
     div(id = "loading-content",
         h5("Preparing the graphical representation..."),
-        img(src = "new_loading.gif")
+        img(src = "loading_2.gif")
     ),
     # The main app code goes here
     hidden(
@@ -112,6 +112,7 @@ shinyUI(
             div(id="chartLoading", style="text-align: center;",
                 # br(),br(),br(),br(),
                 h5("Running DESeq2 to calculate differential abundance. This could take a while..."),
+                # img(src = "spinner.gif", id = "loading-spinner")
                 img(src = "spinner.gif", id = "loading-spinner")
             )
           )

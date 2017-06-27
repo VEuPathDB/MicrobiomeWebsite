@@ -1,0 +1,47 @@
+.text_tooltip div {
+ position: absolute; z-index:100;
+  border: 4px solid #c2e1f5;
+  /*border: 4px solid black;*/
+  /*background-color: #88b7d5;*/
+  background-color: white;
+  /*color: #0e8276;*/
+  color: black;
+  text-align: left;
+  text-decoration: none;
+  font-size:1em;
+}
+
+.div_tooltip div {
+  position: absolute; z-index:100;
+  border: 4px solid #c2e1f5;
+  /*border: 4px solid black;*/
+  /*background-color: #88b7d5;*/
+  background-color: white;
+  /*color: #0e8276;*/
+  color: black;
+  text-align: left;
+  text-decoration: none;
+  font-size:1em;
+}
+
+.tooltip_right div::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+
+.tooltip_left div::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    left: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent black;
+}

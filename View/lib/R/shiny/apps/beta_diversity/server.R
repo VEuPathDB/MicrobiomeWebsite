@@ -2,21 +2,24 @@ library(shiny)
 library(ggplot2)
 library(phyloseq)
 library(data.table)
-source("config.R")
 source("../../lib/wdkDataset.R")
+source("../common/config.R")
 
 shinyServer(function(input, output, session) {
 
   df_abundance <- NULL
   df_sample <- NULL
 
+  phyloseqobj <- NULL
+  ordination_obj <- NULL
+  
   columns <- NULL
   hash_sample_names<- NULL
   hash_count_samples <- NULL
   ggplot_object<-NULL
   ggplot_data <- NULL
 
-  physeq <- reactive({
+  create_phyloseq <- reactive({
     #Change with the file with abundances
     if(is.null(df_abundance)){
       df_abundance <<-
@@ -34,59 +37,73 @@ shinyServer(function(input, output, session) {
           col.names = c("SampleName", "Source", "Property", "Value", "Type", "Filter", "EmptyColumn"),
           colClasses = c("character", "character", "character", "character", "character", "character", "character")
         )
-    }
-
-    df_sample.formatted <- dcast(data = df_sample,formula = SampleName~Property, value.var = "Value")
-    
-    rownames(df_sample.formatted) <- df_sample.formatted[,1]
-    columns <<- colnames(df_sample.formatted)
-    corrected_columns <-  make.names(columns)
-    colnames(df_sample.formatted) <- corrected_columns
-    names(corrected_columns) <- columns
-    hash_sample_names <<- corrected_columns
-    
-    SAMPLE <- sample_data(df_sample.formatted)
-    
-    new_columns <- 0
-    k <- 1
-    for(i in 1:length(columns)){
-      unique_factors <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])
-      if(length(levels(unique_factors)) > 1){
-        new_columns[k] <- paste0(columns[i], " (",length(levels(unique_factors)), ")")
-        hash_count_samples[[new_columns[k]]] <<- columns[i]
-        k <- k+1
+      
+      df_sample.formatted <- dcast(data = df_sample,formula = SampleName~Property, value.var = "Value")
+      
+      rownames(df_sample.formatted) <- df_sample.formatted[,1]
+      columns <<- colnames(df_sample.formatted)
+      corrected_columns <-  make.names(columns)
+      colnames(df_sample.formatted) <- corrected_columns
+      names(corrected_columns) <- columns
+      hash_sample_names <<- corrected_columns
+      
+      SAMPLE <- sample_data(df_sample.formatted)
+      
+      new_columns <- 0
+      k <- 1
+      for(i in 1:length(columns)){
+        unique_factors <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])
+        if(length(levels(unique_factors)) > 1){
+          new_columns[k] <- paste0(columns[i], " (",length(levels(unique_factors)), ")")
+          hash_count_samples[[new_columns[k]]] <<- columns[i]
+          k <- k+1
+        }
       }
+      columns <<- new_columns
+      updateSelectizeInput(session, "category",
+                           choices = c("All Samples", columns[2:length(columns)]),
+                           selected = "All Samples",
+                           options = list(placeholder = 'Type the category to split'),
+                           server = TRUE)
+      
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      
+      OTU_MATRIX <- df_abundance.formatted[,8:ncol(df_abundance.formatted)]
+      OTU = otu_table(OTU_MATRIX, taxa_are_rows = input$taxa_are_rows)
+      
+      TAX_MATRIX <- df_abundance.formatted[,1:7]
+      TAX_MATRIX <- as.matrix(TAX_MATRIX)
+      TAX <- tax_table(TAX_MATRIX)
+      
+      phyloseqobj <<- phyloseq(OTU, TAX, SAMPLE)
+      
     }
-    columns <<- new_columns
-    updateSelectizeInput(session, "category",
-                         choices = c("All Samples", columns[2:length(columns)]),
-                         selected = "All Samples",
-                         options = list(placeholder = 'Type the category to split'),
-                         server = TRUE)
-    
-    df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+    phyloseqobj
+  })
 
-    OTU_MATRIX <- df_abundance.formatted[,8:ncol(df_abundance.formatted)]
-    OTU = otu_table(OTU_MATRIX, taxa_are_rows = input$taxa_are_rows)
-
-    TAX_MATRIX <- df_abundance.formatted[,1:7]
-    TAX_MATRIX <- as.matrix(TAX_MATRIX)
-    TAX <- tax_table(TAX_MATRIX)
-
-    merged_phyloseq <- phyloseq(OTU, TAX, SAMPLE)
-
-    merged_phyloseq
+  observeEvent(input$distance, {
+    physeqobj = create_phyloseq()
+    ordination_obj <<- ordinate(physeqobj, method = "PCoA", distance = input$distance)
   })
   
-  
-
 	output$abundanceChart <- renderPlot({
-	  physeqobj = physeq()
-
-	  if(!identical(input$category, "")){
-      ordination = ordinate(physeqobj, method = "PCoA", distance = input$distance)
-      if(identical(input$category, "All Samples")){
-        chart <- plot_ordination(physeqobj, ordination)+
+	  physeqobj = create_phyloseq()
+    
+	  category<-input$category
+	  
+	  if(identical(category, "")){
+	    return(NULL)
+	  }
+	  
+	  shinyjs::hide("contentArea")
+	  shinyjs::show("chartLoading")
+	  
+	  distance<-input$distance
+	  
+	  # if(!identical(input$category, "")){
+	    # ordination_obj <- ordinate(physeqobj, method = "PCoA", distance = input$distance)
+      if(identical(category, "All Samples")){
+        chart <- plot_ordination(physeqobj, ordination_obj)+
           geom_point(size = 4, alpha= 0.5)+
           theme(
             axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
@@ -94,7 +111,7 @@ shinyServer(function(input, output, session) {
             legend.position="none"
           )
       }else{
-        chart <- plot_ordination(physeqobj, ordination, color=hash_sample_names[[hash_count_samples[[input$category]]]])+
+        chart <- plot_ordination(physeqobj, ordination_obj, color=hash_sample_names[[hash_count_samples[[category]]]])+
           geom_point(size = 4, alpha= 0.5)+
           theme(
             axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
@@ -103,13 +120,17 @@ shinyServer(function(input, output, session) {
             axis.text.x = element_text(angle = 0, hjust = 0.5),
             text = element_text(family = "Palatino", size=13, face="bold", color="black")
           )+
-          labs(color=hash_count_samples[[input$category]])
+          labs(color=hash_count_samples[[category]])
       }
       ggplot_data <<- chart$data
       ggplot_object <<- chart
-	  }else{
-	    chart<-NULL
-	  }
+	  # }else{
+	  #   chart<-NULL
+	  # }
+	  
+	  shinyjs::hide("chartLoading")
+	  shinyjs::show("contentArea")
+	  
 	  chart
 	})
 	

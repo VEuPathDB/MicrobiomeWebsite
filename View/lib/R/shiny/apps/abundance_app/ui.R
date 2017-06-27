@@ -15,8 +15,8 @@ shinyUI(
     # extendShinyjs(text = jsCode),
     # Loading message
     div(id = "loading-content",
-        h5("Preparing the graphical representation..."),
-        img(src = "new_loading.gif")
+        h5("Preparing graphical representation..."),
+        img(src = "loading_microbiome.gif")
     ),
     # The main app code goes here
     hidden(
@@ -74,67 +74,93 @@ shinyUI(
            id="firstTab",
            title = "Overview",
            value = "bySample",
-           fluidRow(column(
-             12,
-             div(style = "position:relative",
-                 # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
-                   uiOutput("abundanceChart"),
-                   # ),
-                 uiOutput("hover_info"))
-           )),
-           fluidRow(column(
-             12,
-               dataTableOutput("by_sample_datatable")
-           ))
+           
+           hidden(
+             div(id="chartLoading", style="text-align: center;",
+                 h5("Formatting plot..."),
+                 img(src = "spinner.gif", id = "loading-spinner")
+             )),
+           div(
+             id="overviewTabContent",
+               fluidRow(column(
+                 12,
+                 div(style = "position:relative",
+                     # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
+                       uiOutput("abundanceChart"),
+                       # ),
+                     uiOutput("hover_info"))
+               )),
+               fluidRow(column(
+                 12,
+                   dataTableOutput("by_sample_datatable")
+               ))
+           )
          ), # end tabPanel bySample
          tabPanel(
            title = "Top OTU Comparison",
            value = "byTopOTU",
-           fluidRow(
-             column(12,
-                    # div(style = "position:relative",
-                    uiOutput("chartByTopOTU"),
-                    uiOutput("hoverByTopOTU")
-                    # )
+           
+           hidden(
+             div(id="topTabLoading", style="text-align: center;",
+                 h5("Formatting plot..."),
+                 img(src = "spinner.gif", id = "loading-spinner")
              )),
-           fluidRow(
-             column(12,
-                    DT::dataTableOutput("by_top_otu_datatable")
+           div(
+             id="topTabContent",
+             fluidRow(
+               column(12,
+                      # div(style = "position:relative",
+                      uiOutput("chartByTopOTU"),
+                      uiOutput("hoverByTopOTU")
+                      # )
+               )),
+             fluidRow(
+               column(12,
+                      DT::dataTableOutput("by_top_otu_datatable")
+               )
              )
            )
          ),# end tabPabel byTopOTU
          tabPanel(
            title = "Single OTU",
            value = "byOTU",
-           fluidRow(
-             column(
+             fluidRow(
+               column(
+                 12,
+                   selectizeInput(
+                     "filterOTU",
+                     choices = NULL,
+                     label = "Search OTU",
+                     width = "100%",
+                     options = list(placeholder = 'Loading...')
+                   )
+               )
+              ),
+           hidden(
+             div(id="singleOtuLoading", style="text-align: center;",
+                 h5("Formatting plot..."),
+                 img(src = "spinner.gif", id = "loading-spinner")
+             )),
+           div(
+             id="singleOtuContent",
+             fluidRow(
+               column(
+                 12,
+                  hidden(uiOutput("result_tests", class="shell-wrap"))
+               )
+             ),
+             fluidRow(
+               column(12,
+                      # div(style = "position:relative",
+                        uiOutput("chartByOTU"),
+                        uiOutput("hoverByOTU")
+                      # )
+                    )),
+             fluidRow(column(
                12,
-                 selectizeInput(
-                   "filterOTU",
-                   choices = NULL,
-                   label = "Search OTU",
-                   width = "100%",
-                   options = list(placeholder = 'Loading...')
-                 )
-             )
-            ),
-           fluidRow(
-             column(
-               12,
-                hidden(uiOutput("result_tests", class="shell-wrap"))
-             )
-           ),
-           fluidRow(
-             column(12,
-                    # div(style = "position:relative",
-                      uiOutput("chartByOTU"),
-                      uiOutput("hoverByOTU")
-                    # )
-                  )),
-           fluidRow(column(
-             12,
-             dataTableOutput("by_otu_datatable")
-           ))
+               dataTableOutput("by_otu_datatable")
+             ))
+           )
          )# end tabPabel byOTU
        ) # end tabSetPanel
     ) # end div id = "app-content",

@@ -1,5 +1,3 @@
-
-
 get_single_boxplot_hover <- function(hover, xmax, x, ymin, lower, middle, upper, ymax, text=NULL){
   if(hover$x < hover$domain$right-2){
     left_pct <-

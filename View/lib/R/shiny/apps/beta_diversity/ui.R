@@ -7,8 +7,8 @@ shinyUI(
 	  includeCSS("www/style.css"),
 	  # Loading message
 	  div(id = "loading-content",
-	      h5("We are preparing the graphical representation..."),
-	      img(src = "loading.gif")
+	      h5("Preparing graphical representation..."),
+	      img(src = "loading_microbiome.gif")
 	  ),
 	  # The main app code goes here
 	  hidden(
@@ -61,15 +61,23 @@ shinyUI(
 	             )
 	      )
 	      ),
-	      fluidRow(column(12,
-      	  div(
-      	    style = "position:relative",
-      	    plotOutput("abundanceChart",
-      	               hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
-      	               click = clickOpts("plot_click"), width = "100%"),
-      	    uiOutput("hover_info")
-      	    )
-	        )
+	      hidden(
+	        div(id="chartLoading", style="text-align: center;",
+	          h5("Formatting plot..."),
+	          img(src = "spinner.gif", id = "loading-spinner")
+	      )),
+	      div(
+	       id="contentArea",
+  	      fluidRow(column(12,
+        	  div(
+        	    style = "position:relative",
+        	    plotOutput("abundanceChart",
+        	               hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
+        	               click = clickOpts("plot_click"), width = "100%"),
+        	    uiOutput("hover_info")
+        	    )
+  	        )
+  	      )
 	      )
 	    ) # end div id = "app-content",
 	  ) # end hidden
