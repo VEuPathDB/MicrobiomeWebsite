@@ -3,9 +3,9 @@ library(shiny)
 library(ggplot2)
 library(phyloseq)
 library(data.table)
-source("config.R")
 source("../../lib/wdkDataset.R")
-source("facet_even.R")
+source("../common/facet_even.R")
+source("../common/config.R")
 source("functions.R")
 
 shinyServer(function(input, output, session) {
@@ -241,6 +241,9 @@ shinyServer(function(input, output, session) {
       return(chart)
     }
     
+    shinyjs::hide("singleOtuContent")
+    shinyjs::show("singleOtuLoading")
+    
     taxon_level <- input$taxonLevel
     otu_picked <- input$filterOTU
     if(!identical(otu_picked, "")){
@@ -303,10 +306,12 @@ shinyServer(function(input, output, session) {
           
           otu_for_plot <- as.data.frame(t(filtered_otu))
           otu_for_plot$SampleName <- rownames(otu_for_plot)
+          # remove or not remove the 0?
+          otu_for_plot_filtered<-otu_for_plot[otu_for_plot[,1]>0,]
           
           df_sample_selected <- df_sample.formatted[,c("SampleName", hash_sample_names[[hash_count_samples[[input$category]]]])]
           
-          data_merged <- merge(df_sample_selected, otu_for_plot, by.x = "SampleName", by.y = "SampleName")
+          data_merged <- merge(df_sample_selected, otu_for_plot_filtered, by.x = "SampleName", by.y = "SampleName")
           
           chart<-ggplot(data_merged, aes_string(x=hash_sample_names[[hash_count_samples[[input$category]]]], y=ggname(input$filterOTU)))+geom_boxplot()+
             theme(
@@ -331,6 +336,10 @@ shinyServer(function(input, output, session) {
     }else{
       chart<-NULL
     }
+    
+    shinyjs::hide("singleOtuLoading", anim = TRUE, animType = "fade")
+    shinyjs::show("singleOtuContent")
+    
     chart
   })
   
@@ -350,6 +359,9 @@ shinyServer(function(input, output, session) {
     if(identical(input$category, "")){
       return(chart)
     }
+    
+    shinyjs::hide("topTabContent")
+    shinyjs::show("topTabLoading")
     
     if(identical(input$category, "All Samples")){
       output$by_top_otu_datatable <- DT::renderDataTable(NULL)
@@ -479,6 +491,10 @@ shinyServer(function(input, output, session) {
       ggplot_by_top_otu_object <<- chart
       ggplot_build_by_top_otu_object <<- ggplot_build(chart)
     }
+    
+    shinyjs::hide("topTabLoading", anim = TRUE, animType = "fade")
+    shinyjs::show("topTabContent")
+    
     chart
   })
   
@@ -501,6 +517,9 @@ shinyServer(function(input, output, session) {
   
   output$plotWrapper <- renderPlot({
     physeqobj <- physeq()
+    
+    shinyjs::hide("overviewTabContent")
+    shinyjs::show("chartLoading")
     
     if(!identical(input$category, "")){
       cbPalette <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a","#ffff99", "#b15928")
@@ -548,6 +567,10 @@ shinyServer(function(input, output, session) {
     }else{
       chart<-NULL
     }
+    
+    shinyjs::hide("chartLoading", anim = TRUE, animType = "fade")
+    shinyjs::show("overviewTabContent")
+    
     chart
   })
 

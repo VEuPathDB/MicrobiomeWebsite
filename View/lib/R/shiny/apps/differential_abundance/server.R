@@ -5,10 +5,10 @@ library(data.table)
 source("../../lib/wdkDataset.R")
 library(DESeq2)
 source("../common/ggplot_extension.R")
+source("../common/eupath_functions.R")
 source("../common/config.R")
 source("functions.R")
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
   df_abundance <- NULL
@@ -72,10 +72,10 @@ shinyServer(function(input, output, session) {
       
       new_columns <- 0
       k <- 1
-      first_with_two<-0
-      levels_factors_two<-0
-      levels_factors_three<-0
-      first_with_three<-0
+      # first_with_two<-0
+      # levels_factors_two<-0
+      # levels_factors_three<-0
+      # first_with_three<-0
       
       min_factors<-1000
       
