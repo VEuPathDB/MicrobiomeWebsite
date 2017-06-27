@@ -72,7 +72,7 @@ shinyUI(
 	    tabPanel(
 	      id="firstTab",
 	      title = "Alpha Diversity Overview",
-	      value = "bySample",
+	      value = "firstTab",
 	      hidden(
       div(id="chartLoading", style="text-align: center;",
           # br(),br(),br(),br(),
@@ -96,6 +96,7 @@ shinyUI(
 	    ), # end tabPanel bySample
 	    tabPanel(
 	      id="secondTab",
+	      value = "secondTab",
 	      title = "Explore metadata",
 	      fluidRow(
 	        column(10,

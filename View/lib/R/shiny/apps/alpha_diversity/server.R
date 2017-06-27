@@ -29,6 +29,10 @@ shinyServer(function(input, output, session) {
   ggplot_data <- NULL
   ggplot_build_object <- NULL
   
+  ggplot_object_mt<-NULL
+  ggplot_data_mt <- NULL
+  ggplot_build_object_mt <- NULL
+  
   abundance_otu <- NULL
   abundance_taxa <- NULL
   
@@ -36,7 +40,6 @@ shinyServer(function(input, output, session) {
   minimum_height_after_resizing <- 8.5
   create_phyloseq <- reactive({
     if(is.null(df_abundance)){
-      # start.time <- Sys.time()
       df_abundance <<-
       read.csv(
         getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir),
@@ -230,7 +233,7 @@ shinyServer(function(input, output, session) {
     
     shinyjs::hide("chartLoading", anim = TRUE, animType = "fade")
     shinyjs::show("allSamplesArea")
-    
+    print("entrouuuu")
     ggplot_object<<-chart
     ggplot_build_object<<-ggplot_build(chart)
     ggplot_data<<-chart$data
@@ -354,18 +357,17 @@ shinyServer(function(input, output, session) {
         facet_grid(as.formula(paste("variable ~",joined_categories)), scales = "free_y")
     }
     
-    ggplot_object<<-chart
-    ggplot_build_object<<-ggplot_build(chart)
-    ggplot_data<<-chart$data
+    ggplot_object_mt<<-chart
+    ggplot_build_object_mt<<-ggplot_build(chart)
+    ggplot_data_mt<<-chart$data
     
-    output$result_tests <- renderUI(runStatisticalTests(category_column, measures, ggplot_data))
+    output$result_tests <- renderUI(runStatisticalTests(category_column, measures, ggplot_data_mt))
     output$byMetadataDt = renderDataTable(
       richness_merged,
       options = list(
         order = list(list(0, 'desc'))
       )
     )
-    
     
     
     shinyjs::hide("metadataLoading", anim = TRUE, animType = "fade")
@@ -388,7 +390,7 @@ shinyServer(function(input, output, session) {
     category_to_show <- hash_count_samples[category]
     category_column <- hash_sample_names[category_to_show]
     
-    max_col <- max(ggplot_build_object$layout$panel_layout$COL)
+    max_col <- max(ggplot_build_object_mt$layout$panel_layout$COL)
     
     tooltip_direction<-"right"
     if(max_col == 1){
@@ -397,7 +399,7 @@ shinyServer(function(input, output, session) {
         tooltip_direction<-"left"
       }
     }else{
-      panel_layout <- ggplot_build_object$layout$panel_layout
+      panel_layout <- ggplot_build_object_mt$layout$panel_layout
       last_category <- category_column[length(category_column)]
       panel_hover <- panel_layout[panel_layout[last_category] == hover$panelvar1, ]
       if(panel_hover$COL[1] == max_col){
@@ -411,13 +413,13 @@ shinyServer(function(input, output, session) {
     variable_number <- ifelse(length(category)==1, 1, 2)
     variable_index<-paste0("panelvar",variable_number)
     
-    panel_filtered <- subset(ggplot_build_object$layout$panel_layout, variable==hover[[variable_index]])
+    panel_filtered <- subset(ggplot_build_object_mt$layout$panel_layout, variable==hover[[variable_index]])
     length_category<-length(category)
     
     hover_format <- "<b>%s:</b>&nbsp;%s<br>"
     
     # PROBLEMA AQUI
-    x_labels <- ggplot_data[,category_column[1]]
+    x_labels <- ggplot_data_mt[,category_column[1]]
     x_labels <- levels(factor(x_labels))
     hover_category<-sprintf(hover_format, category_to_show[1], x_labels[round(hover$x)])
     
@@ -438,7 +440,7 @@ shinyServer(function(input, output, session) {
     
     
     if(identical(typeRadio, "dotplot") ){
-      near_points <- nearPoints(ggplot_data, hover)
+      near_points <- nearPoints(ggplot_data_mt, hover)
       if(nrow(near_points)>0){
         alpha_and_sample <- ""
         for(i in 1:nrow(near_points)){
@@ -457,7 +459,7 @@ shinyServer(function(input, output, session) {
         return(NULL)
       }
     }else{
-      gg_data<-subset(ggplot_build_object$data[[1]], PANEL==panel_filtered$PANEL & x==round(hover$x))
+      gg_data<-subset(ggplot_build_object_mt$data[[1]], PANEL==panel_filtered$PANEL & x==round(hover$x))
       
       if(nrow(gg_data)>0){
         if(hover$x<gg_data$xmin | hover$x > gg_data$xmax){
@@ -569,8 +571,13 @@ shinyServer(function(input, output, session) {
   output$btnDownloadPNG <- downloadHandler(
     filename = "plot.png",
     content = function(file) {
+      isolate(selected_tab<-input$tabs)
       png(file, width=1200,height=800,units="px")
-      print(ggplot_object)
+      if(identical(selected_tab, "firstTab")){
+        print(ggplot_object)
+      }else{
+        print(ggplot_object_mt)
+      }
       dev.off()
     }
   )
@@ -578,9 +585,14 @@ shinyServer(function(input, output, session) {
   output$btnDownloadEPS <- downloadHandler(
     filename = "plot.eps",
     content = function(file) {
+      isolate(selected_tab<-input$tabs)
       setEPS()
       postscript(file, width=16,height=10.67, family = "Palatino")
-      print(ggplot_object)
+      if(identical(selected_tab, "firstTab")){
+        print(ggplot_object)
+      }else{
+        print(ggplot_object_mt)
+      }
       dev.off()
     }
   )
@@ -588,8 +600,13 @@ shinyServer(function(input, output, session) {
   output$btnDownloadSVG <- downloadHandler(
     filename = "plot.svg",
     content = function(file) {
+      isolate(selected_tab<-input$tabs)
       svg(file, width=16,height=10.67)
-      print(ggplot_object)
+      if(identical(selected_tab, "firstTab")){
+        print(ggplot_object)
+      }else{
+        print(ggplot_object_mt)
+      }
       dev.off()
     }
   )
@@ -597,7 +614,11 @@ shinyServer(function(input, output, session) {
   output$btnDownloadCSV <- downloadHandler(
     filename = "data.csv",
     content = function(file) {
-      write.csv(ggplot_object$data, file)
+      if(identical(selected_tab, "firstTab")){
+        write.csv(ggplot_object$data, file)
+      }else{
+        write.csv(ggplot_object_mt$data, file)
+      }
     }
   )
   
