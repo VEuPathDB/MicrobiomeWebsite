@@ -233,7 +233,7 @@ shinyServer(function(input, output, session) {
     
     shinyjs::hide("chartLoading", anim = TRUE, animType = "fade")
     shinyjs::show("allSamplesArea")
-    print("entrouuuu")
+    
     ggplot_object<<-chart
     ggplot_build_object<<-ggplot_build(chart)
     ggplot_data<<-chart$data
@@ -386,12 +386,14 @@ shinyServer(function(input, output, session) {
     if (is.null(hover$x) || round(hover$x) <0 || round(hover$y)<0 || is.null(hover$y))
       return(NULL)
     
+    # hover$panelvar1<-ifelse(is.null(hover$panelvar1), "NA", hover$panelvar1)
+    
     isolate(category<-input$category)
     category_to_show <- hash_count_samples[category]
     category_column <- hash_sample_names[category_to_show]
     
     max_col <- max(ggplot_build_object_mt$layout$panel_layout$COL)
-    
+
     tooltip_direction<-"right"
     if(max_col == 1){
       middle <- (hover$domain$right-hover$domain$left)/2
@@ -401,7 +403,15 @@ shinyServer(function(input, output, session) {
     }else{
       panel_layout <- ggplot_build_object_mt$layout$panel_layout
       last_category <- category_column[length(category_column)]
-      panel_hover <- panel_layout[panel_layout[last_category] == hover$panelvar1, ]
+      if(!is.null(hover$panelvar1)){
+        rows_to_filter<-panel_layout[last_category] == hover$panelvar1
+        rows_to_filter[is.na(rows_to_filter)]<-FALSE
+        panel_hover <- panel_layout[rows_to_filter, ]
+      }else{
+        rows_to_filter<-is.na(panel_layout[[last_category]])
+        panel_hover <- panel_layout[rows_to_filter,]
+      }
+      
       if(panel_hover$COL[1] == max_col){
         middle <- (hover$domain$right-hover$domain$left)/2
           if(hover$x>middle){
@@ -415,29 +425,45 @@ shinyServer(function(input, output, session) {
     
     panel_filtered <- subset(ggplot_build_object_mt$layout$panel_layout, variable==hover[[variable_index]])
     length_category<-length(category)
-    
     hover_format <- "<b>%s:</b>&nbsp;%s<br>"
     
     # PROBLEMA AQUI
     x_labels <- ggplot_data_mt[,category_column[1]]
     x_labels <- levels(factor(x_labels))
+    
     hover_category<-sprintf(hover_format, category_to_show[1], x_labels[round(hover$x)])
     
     if(length_category>1){
-      hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[length_category], hover$panelvar1))
-      panel_filtered <- panel_filtered[panel_filtered[category_column[length_category]] == hover$panelvar1, ]
+      
+      if(!is.null(hover$panelvar1)){
+        hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[length_category], hover$panelvar1))
+        rows_to_filter<-panel_filtered[category_column[length_category]] == hover$panelvar1
+        rows_to_filter[is.na(rows_to_filter)]<-FALSE
+        panel_filtered <- panel_filtered[rows_to_filter, ]
+      }else{
+        hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[length_category], "NA"))
+        rows_to_filter<-is.na(panel_filtered[[category_column[length_category]]])
+        panel_filtered <- panel_filtered[rows_to_filter, ]
+      }
       
       if(length_category>=3){
         for(i in 1:(length_category-2)){
           panel_category_index<-paste0("panelvar",length_category+i-1)
-          panel_filtered <- panel_filtered[panel_filtered[category_column[i+1]] == hover[[panel_category_index]], ]
-          
-          hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[i+1], hover[[panel_category_index]]))
+          if(!is.null(hover[[panel_category_index]])){
+            hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[i+1], hover[[panel_category_index]]))
+            rows_to_filter<-panel_filtered[category_column[i+1]] == hover[[panel_category_index]]
+            rows_to_filter[is.na(rows_to_filter)]<-FALSE
+            panel_filtered <- panel_filtered[rows_to_filter, ]
+            panel_filtered <- panel_filtered[panel_filtered[category_column[i+1]] == hover[[panel_category_index]], ]
+          }else{
+            hover_category <- paste0(hover_category, sprintf(hover_format, category_to_show[i+1], "NA"))
+            rows_to_filter<-is.na(panel_filtered[[category_column[i+1]]])
+            panel_filtered <- panel_filtered[rows_to_filter, ]
+          }
           
         } 
       }
     }
-    
     
     if(identical(typeRadio, "dotplot") ){
       near_points <- nearPoints(ggplot_data_mt, hover)
@@ -460,7 +486,6 @@ shinyServer(function(input, output, session) {
       }
     }else{
       gg_data<-subset(ggplot_build_object_mt$data[[1]], PANEL==panel_filtered$PANEL & x==round(hover$x))
-      
       if(nrow(gg_data)>0){
         if(hover$x<gg_data$xmin | hover$x > gg_data$xmax){
           return(NULL)
@@ -494,8 +519,8 @@ shinyServer(function(input, output, session) {
       return(NULL)
     
     # to define if the tooltip will be in the right or left side
-    max_col <- max(ggplot_build_object$layout$panel_layout$COL)
-    # panel_hover <- subset(ggplot_build_object$layout$panel_layout, variable==hover$panelvar1)
+    max_col <- max(ggplot_build_object$layout$panel_layout$COL[1])
+    
     tooltip_direction <- "right"
     
     if(max_col == 1){
