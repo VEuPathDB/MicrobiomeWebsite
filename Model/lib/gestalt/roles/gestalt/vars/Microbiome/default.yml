@@ -1,0 +1,6 @@
+---
+modelconfig_modelName: microbiomeModel
+
+modelprop:
+  TWITTER_URL: https://twitter.com/MicrobiomeDB
+  TWITTER_WIDGET_ID: 788427253331951616
