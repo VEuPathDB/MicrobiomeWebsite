@@ -1,6 +1,7 @@
+# $SourceFileURL$
 ---
-# src is relative to conifer/templates unless full path is given
 
+# src is relative to conifer/templates unless full path is given
 MicrobiomeDB:
   model-config.xml:
     src: 'FgpUtil/model-config.xml.j2'
