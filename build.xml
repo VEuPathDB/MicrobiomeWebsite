@@ -56,6 +56,7 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeWebsite-Installation" depends="EbrcWebSvcCommon-Installation,
+  	                                                   MicrobiomeWebsite-MavenInstallation,
                                                        MicrobiomeModel-Installation,
                                                        MicrobiomeWebsite/Model-Installation,
                                                        MicrobiomeWebsite/View-Installation,
@@ -64,6 +65,13 @@
       <property name="project" value="MicrobiomeWebsite"/>
     </ant>
   </target>
+	
+	<target name="MicrobiomeWebsite-MavenInstallation">
+	  <ant target="mavenBuildProject">
+	    <property name="project" value="MicrobiomeWebsite"/>
+	  </ant>
+	  <property name="alreadyBuilt" value="true"/>
+	</target>
 
 <!-- Added START-->
 <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
