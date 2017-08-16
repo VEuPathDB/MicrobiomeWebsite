@@ -1,0 +1,12 @@
+# $SourceFileURL$
+---
+
+# src is relative to conifer/templates unless full path is given
+MicrobiomeDB:
+  model-config.xml:
+    src: 'WDK/model-config.xml.j2'
+    dest: '{{ gus_home }}/config/{{ project }}/model-config.xml'
+  model.prop:
+    src: 'WDK/model.prop.j2'
+    dest: '{{ gus_home }}/config/{{ project }}/model.prop'
+

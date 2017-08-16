@@ -57,6 +57,7 @@
 
   <target name="MicrobiomeWebsite-Installation" depends="EbrcWebSvcCommon-Installation,
                                                        MicrobiomeModel-Installation,
+                                                       MicrobiomeWebsite/Model-Installation,
                                                        MicrobiomeWebsite/View-Installation,
                                                        MicrobiomeWebsite/Site-Installation">
     <ant target="defaultProjectInstall">
@@ -66,7 +67,7 @@
 
 <!-- Added START-->
 <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
-  <target name="MicrobiomeWebsite/Model--Installation">
+  <target name="MicrobiomeWebsite/Model-Installation">
     <ant target="defaultComponentInstall">
       <property name="project" value="MicrobiomeWebsite"/>
       <property name="component" value="Model"/>
