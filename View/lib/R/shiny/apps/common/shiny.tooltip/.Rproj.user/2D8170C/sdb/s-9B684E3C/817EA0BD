@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "#' Function to read input files for MicrobiomeDB and returns a MicrobiomeData\n#'   object.\n#' @param data The datatable with one object per line\n#' @param hover The hover object returned by shiny\n#' @export\nhorizontal_points <- function(data, hover){\n  x<-round(hover$x)\n  y<-round(hover$y)\n\n  rows_values<-data[,get(hover$mapping$y)]\n  column_values <- levels(factor(data[,get(hover$mapping$x)]))\n  if(is.factor(rows_values)){\n    rows <- levels(data[,get(hover$mapping$y)])\n  }else{\n    rows <- levels(factor(data[,get(hover$mapping$y)]))\n  }\n  line<-subset(data, get(hover$mapping$y)==rows[y])\n  line[,selected_:=TRUE]\n  if(nrow(line)==1){\n    column_index <- match(line[,get(hover$mapping$x)], column_values)\n    line[,point_x:=column_index]\n    line\n  }else{\n    line<-subset(line, get(hover$mapping$x)==column_values[x])\n    column_index <- match(line[,get(hover$mapping$x)], column_values)\n    line[,point_x:=column_index]\n    line\n  }\n}\n\n#' Generate a tooltip for  input files for MicrobiomeDB and returns a MicrobiomeData\n#' @param hover The hover object returned by shiny\n#' @param df The data frame with information to show\n#' @param point_x The x axis value to show the tooltip\n#' @param point_y The y axis value to show the tooltip\n#' @param right_offset Offset value to show the tooltip from the right side of the plot\n#' @param left_offset Offset value to show the tooltip from the left side\n#' @param top_offset Offset value to show the tooltip from the top\n#' @return Returns a HTML object\n#' @keywords tooltip\n#' @export\npoint_tooltip <- function(hover, df, point_x, point_y, right_offset=0,\n                          left_offset=0,top_offset=0 ){\n  middle <- (hover$domain$right-hover$domain$left)/2\n\n  if(point_x < middle){\n    direction <- \"right\"\n  }else{\n    direction <- \"left\"\n  }\n\n  top_pct <-\n    (hover$domain$top - point_y) / (hover$domain$top - hover$domain$bottom)\n  top_px <-\n    hover$range$top + top_pct * (hover$range$bottom - hover$range$top)\n\n  if(identical(direction, \"right\")){\n    left_pct <-\n      (point_x - hover$domain$left) / (hover$domain$right - hover$domain$left)\n\n    left_px <-\n      hover$range$left + left_pct * (hover$range$right - hover$range$left)\n\n\n    style <-\n      paste0(\n        \"padding: 5px;\",\n        \"left:\",\n        left_px + left_offset,\n        \"px; top:\",\n        top_px+top_offset,\n        \"px;\"\n      )\n  }else{\n    right_pct <-\n      (hover$domain$right-point_x) / (hover$domain$right - hover$domain$left)\n\n    right_px <-\n      right_pct * (hover$range$right - hover$range$left)\n\n    style <-\n      paste0(\n        \"padding: 5px;\",\n        \"right:\",\n        right_px+right_offset,\n        \"px; top:\",\n        top_px+top_offset,\n        \"px;\"\n      )\n  }\n\n  text_div <- sprintf(\"<div style='%s' class='div_tooltip tooltip_%s'>\",style, direction)\n  table_text <- \"<table style='padding:0;margin:0;' class='table table-striped table-condensed'><tbody>\"\n\n  value<-apply(df, 1, function(x){\n    table_line <- \"<tr>\"\n    table_line<-paste0(table_line,\"<td><strong>\", names(x), \"</strong></td>\")\n    table_line<-paste0(table_line,\"<td>\", x, \"</td>\")\n    table_line<-paste0(table_line,\"</tr>\")\n    table_line\n  })\n  value<-paste(value, collapse =\"\")\n\n  table_text <- paste0(table_text, value, \"</tbody></table>\")\n  # print(table_text)\n  # table_text<-df$rho\n  text_div <- paste0(text_div, table_text,\"</div>\")\n\n  HTML(text_div)\n}\n",
+    "created" : 1500529814921.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1711243639",
+    "id" : "817EA0BD",
+    "lastKnownWriteTime" : 1500542413,
+    "last_content_update" : 1500542413858,
+    "path" : "~/Projects/microbiomedb/common/shiny.tooltip/R/tooltip.R",
+    "project_path" : "R/tooltip.R",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,12 +1,38 @@
+# Declaring the packages
 library(shiny)
 library(ggplot2)
-library(phyloseq)
-library(data.table)
 source("../../lib/wdkDataset.R")
+library(data.table)
+library(phyloseq)
+source("../common/ggplot_ext/eupath_default.R")
+source("../common/tooltip/tooltip.R")
+source("../common/mbiome/mbiome-reader.R")
 source("../common/config.R")
 
 shinyServer(function(input, output, session) {
-
+  # Declaring some global variables
+  # df_abundance, df_sample and df_sample.formatted are declared global to avoid 
+  # multiple file reading in the reactive section
+  mstudy_obj <- NULL
+  
+  hash_colors <- NULL
+  
+  metadata_list <- NULL
+  
+  # variables to define some plot parameters
+  NUMBER_TAXA <- 10
+  WIDTH <- global_width
+  MAX_SAMPLES_NO_RESIZE <- 30
+  MIN_HEIGHT_AFTER_RESIZE <- 9
+  
+  NO_METADATA_SELECTED <- "Select sample details"
+  
+  
+  eupath_pallete<-c("#6a3d9a", "#cab2d6", "#ff7f00", "#fdbf6f", "#e31a1c", "#fb9a99", "#33a02c", "#b2df8a", "#1f78b4", "#a6cee3")
+  
+  # end new variables
+  
+  
   df_abundance <- NULL
   df_sample <- NULL
 
@@ -17,123 +43,180 @@ shinyServer(function(input, output, session) {
   hash_sample_names<- NULL
   hash_count_samples <- NULL
   ggplot_object<-NULL
+  ggplot_build_object<-NULL
   ggplot_data <- NULL
 
-  create_phyloseq <- reactive({
-    #Change with the file with abundances
-    if(is.null(df_abundance)){
-      df_abundance <<-
-      read.csv(
-        getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir),
-          sep = "\t",
-          col.names = c("Sample","Taxon", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "RelativeAbundance", "AbsoluteAbundance", "EmptyColumn"),
-          colClasses = c("character", "integer", "character", "character", "character", "character", "character", "character", "character", "numeric", "integer", "character")
-        )
-      # Change with the Characteristics file
-      df_sample <<-
-      read.csv(
-        getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir),
-          sep = "\t",
-          col.names = c("SampleName", "Source", "Property", "Value", "Type", "Filter", "EmptyColumn"),
-          colClasses = c("character", "character", "character", "character", "character", "character", "character")
-        )
+  load_microbiome_data <- reactive({
+    if(is.null(mstudy_obj)){
+abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
+sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
       
-      df_sample.formatted <- dcast(data = df_sample,formula = SampleName~Property, value.var = "Value")
+      mstudy_obj <<- import.eupath(
+        taxa_abundance_path = abundance_file,
+        sample_path = sample_file,
+        aggregate_by = "Species"
+      )
       
-      rownames(df_sample.formatted) <- df_sample.formatted[,1]
-      columns <<- colnames(df_sample.formatted)
-      corrected_columns <-  make.names(columns)
-      colnames(df_sample.formatted) <- corrected_columns
-      names(corrected_columns) <- columns
-      hash_sample_names <<- corrected_columns
-      
-      SAMPLE <- sample_data(df_sample.formatted)
-      
-      new_columns <- 0
-      k <- 1
-      for(i in 1:length(columns)){
-        unique_factors <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])
-        if(length(levels(unique_factors)) > 1){
-          new_columns[k] <- paste0(columns[i], " (",length(levels(unique_factors)), ")")
-          hash_count_samples[[new_columns[k]]] <<- columns[i]
-          k <- k+1
-        }
-      }
-      columns <<- new_columns
+      filtered_categories <- mstudy_obj$get_filtered_categories()
       updateSelectizeInput(session, "category",
-                           choices = c("All Samples", columns[2:length(columns)]),
-                           selected = "All Samples",
-                           options = list(placeholder = 'Type the category to split'),
+                           choices = c(NO_METADATA_SELECTED, filtered_categories),
+                           selected = NO_METADATA_SELECTED,
+                           options = list(placeholder = 'Select sample details'),
                            server = TRUE)
-      
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      
-      OTU_MATRIX <- df_abundance.formatted[,8:ncol(df_abundance.formatted)]
-      OTU = otu_table(OTU_MATRIX, taxa_are_rows = input$taxa_are_rows)
-      
-      TAX_MATRIX <- df_abundance.formatted[,1:7]
-      TAX_MATRIX <- as.matrix(TAX_MATRIX)
-      TAX <- tax_table(TAX_MATRIX)
-      
-      phyloseqobj <<- phyloseq(OTU, TAX, SAMPLE)
-      
+      updateSelectizeInput(session, "categoryShape",
+                           choices = c(NO_METADATA_SELECTED, filtered_categories),
+                           selected = NO_METADATA_SELECTED,
+                           options = list(placeholder = 'Select sample details'),
+                           server = TRUE)
     }
-    phyloseqobj
+    
+    mstudy_obj
   })
 
-  observeEvent(input$distance, {
-    physeqobj = create_phyloseq()
-    ordination_obj <<- ordinate(physeqobj, method = "PCoA", distance = input$distance)
+  observeEvent(input$distance,{
+    mstudy_obj <- load_microbiome_data()
+    distance <- input$distance
+    if(!identical(distance, "")){
+      shinyjs::hide("contentArea")
+      shinyjs::show("betaLoading")
+      
+      phyloseq_obj <- mbiome2phyloseq(mstudy_obj, "Species")
+      dist <- distance(phyloseq_obj, method = distance)
+      ordination_obj <<- ordinate(phyloseq_obj, method = "PCoA", distance = dist)
+      shinyjs::hide("betaLoading")
+      shinyjs::show("contentArea")
+    }
   })
   
-	output$abundanceChart <- renderPlot({
-	  physeqobj = create_phyloseq()
+  output$betadiversityChart <- renderUI({
+    mstudy_obj <- load_microbiome_data()
+    categoryColor<-input$category
+    categoryShape<-input$categoryShape
+    distance<-input$distance
+    result_to_show<-NULL
     
-	  category<-input$category
-	  
-	  if(identical(category, "")){
-	    return(NULL)
-	  }
-	  
-	  shinyjs::hide("contentArea")
-	  shinyjs::show("chartLoading")
-	  
-	  distance<-input$distance
-	  
-	  # if(!identical(input$category, "")){
-	    # ordination_obj <- ordinate(physeqobj, method = "PCoA", distance = input$distance)
-      if(identical(category, "All Samples")){
-        chart <- plot_ordination(physeqobj, ordination_obj)+
-          geom_point(size = 4, alpha= 0.5)+
-          theme(
-            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-            legend.position="none"
-          )
-      }else{
-        chart <- plot_ordination(physeqobj, ordination_obj, color=hash_sample_names[[hash_count_samples[[category]]]])+
-          geom_point(size = 4, alpha= 0.5)+
-          theme(
-            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-            legend.text = element_text(family = "Palatino", size=14, face="bold", color="black"),
-            legend.key.size = unit(x = 1.5, units = "char"),
-            axis.text.x = element_text(angle = 0, hjust = 0.5),
-            text = element_text(family = "Palatino", size=13, face="bold", color="black")
+    if(identical(categoryColor, "") & identical(categoryShape, "") ){
+      result_to_show <- h5(class="alert alert-warning", "Please choose at least.")
+    }else if( !is.null(ordination_obj) ) {
+      shapes <- c(19,17,15,4,8,5:13)
+      quantity_shape <- length(mstudy_obj$sample_table$get_unique_details(categoryShape))
+      
+      shinyjs::hide("contentArea")
+      shinyjs::show("chartLoading")
+      
+      eigvec = ordination_obj$values$Relative_eig
+      fracvar = eigvec[1:6] / sum(eigvec)
+      percvar = round(100*fracvar, 1)
+      ps_data<-data.frame(ordination_obj$vectors)
+      ps_data$SampleName<-row.names(ps_data)
+      
+      categoryColor <- ifelse(identical(categoryColor,""), NO_METADATA_SELECTED, categoryColor)
+      categoryShape <- ifelse(identical(categoryShape,""), NO_METADATA_SELECTED, categoryShape)
+      
+      if(identical(categoryColor, NO_METADATA_SELECTED) &
+         identical(categoryShape, NO_METADATA_SELECTED)){
+        
+        chart<-ggplot(ps_data, aes(Axis.1, Axis.2))+
+          geom_point(aes(size = 4, alpha= 0.5))+
+          guides(size=FALSE, alpha=F)
+        
+      }else if(!identical(categoryColor, NO_METADATA_SELECTED) & identical(categoryShape, NO_METADATA_SELECTED)){
+        sample_details<-mstudy_obj$get_metadata_as_column(categoryColor)
+        
+        merged<-merge(sample_details, ps_data, by="SampleName")
+        colnames(merged)<-c("SampleName", "colorCategory", colnames(ps_data)[1:(length(ps_data)-1)])
+        
+        chart<-ggplot(merged, aes(Axis.1, Axis.2))+
+          theme_eupath_default(
+            legend.title.align=0.4,
+            legend.title = element_text(colour="black", face="bold")
           )+
-          labs(color=hash_count_samples[[category]])
+          geom_point(aes(size = 4, alpha= 0.5, color=colorCategory))+
+          
+          guides(shape=FALSE, size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
+                                                                         override.aes = list(size=5)))+
+          labs(color=categoryColor)
+        
+      }else if(identical(categoryColor, NO_METADATA_SELECTED) & !identical(categoryShape, NO_METADATA_SELECTED)){
+        sample_details<-mstudy_obj$get_metadata_as_column(categoryShape)
+        
+        merged<-merge(sample_details, ps_data, by="SampleName")
+        
+        colnames(merged)<-c("SampleName", "categoryShape", colnames(ps_data)[1:(length(ps_data)-1)])
+        
+        
+        chart<-ggplot(merged, aes(Axis.1, Axis.2))+
+          geom_point(aes(size = 4, alpha= 0.5, shape=categoryShape))+
+          guides(colour=FALSE, size=FALSE, alpha=F)+
+          scale_shape_manual(values=shapes[1:quantity_shape])+
+          guides(shape = guide_legend(override.aes = list(size = 5)))+
+          labs(shape=categoryShape)
+        
+      }else{
+        if(identical(categoryColor, categoryShape)){
+          sample_details<-mstudy_obj$get_metadata_as_column(categoryColor)
+          merged<-merge(sample_details, ps_data, by="SampleName")
+          colnames(merged)<-c("SampleName", "categoryColor", colnames(ps_data)[1:(length(ps_data)-1)])
+          
+          chart<-ggplot(merged, aes(Axis.1, Axis.2))+
+            geom_point(aes(size = 4, alpha= 0.5, color=categoryColor, shape=categoryColor))+
+            guides(size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
+                                                              override.aes = list(size=5)))+
+            # guides(size=FALSE, alpha=F)+
+            scale_shape_manual(values=shapes[1:quantity_shape])+
+            labs(color=categoryColor, shape=categoryColor)
+        }else{
+          categories<-c(categoryColor, categoryShape)
+          sample_details<-mstudy_obj$get_metadata_as_column(categories)
+          merged<-merge(sample_details, ps_data, by="SampleName")
+          colnames(merged)<-c("SampleName", "colorCategory", "shapeCategory", colnames(ps_data)[1:(length(ps_data)-1)])
+          
+          chart<-ggplot(merged, aes(Axis.1, Axis.2))+
+            geom_point(aes(size = 4, alpha= 0.5, color=colorCategory, shape=shapeCategory))+
+            # guides(size=FALSE, alpha=F, colour = guide_legend(order = 1), shape = guide_legend(order = 2))+
+            guides(size=FALSE, alpha=F, colour = guide_legend(order = 1, keywidth = 1.7, keyheight = 1.7,
+                                                              override.aes = list(size=5)),
+                   shape = guide_legend(order = 2, override.aes = list(size = 5)))+
+            
+            
+            scale_shape_manual(values=shapes[1:quantity_shape])+
+            labs(color=categoryColor, shape=paste(categoryShape))
+          
+          fill = guide_legend(keywidth = 1.7, keyheight = 1.7)
+        }
       }
-      ggplot_data <<- chart$data
+      
+      chart<-chart+
+        xlab(sprintf("Axis.1 [ %.1f %%]", percvar[1]))+
+        ylab(sprintf("Axis.2 [ %.1f %%]", percvar[2]))+
+        theme_eupath_default(
+          # legend.position="bottom", legend.direction = "horizontal",
+          legend.title = element_text(face="bold", size=rel(0.9)),
+          legend.text = element_text(size=rel(0.9))
+        )
+      
       ggplot_object <<- chart
-	  # }else{
-	  #   chart<-NULL
-	  # }
-	  
-	  shinyjs::hide("chartLoading")
-	  shinyjs::show("contentArea")
-	  
-	  chart
-	})
-	
+      ggplot_build_object <<- ggplot_build(chart)
+      
+      output$betaChartWrapper<-renderPlot({
+        chart
+      })
+      
+      result_to_show<-plotOutput("betaChartWrapper",
+                                 hover = hoverOpts("plot_hover", delay = 60, delayType = "throttle"),
+                                 width = paste0(WIDTH,"px"),
+                                 height = "500px"
+      )
+      
+      shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
+      shinyjs::show("contentArea")
+    }
+    
+    result_to_show
+    
+  })
+
+
 	output$btnDownloadPNG <- downloadHandler(
 	  filename = "plot.png",
 	  content = function(file) {
@@ -142,17 +225,18 @@ shinyServer(function(input, output, session) {
 	    dev.off()
 	  }
 	)
-	
+
 	output$btnDownloadEPS <- downloadHandler(
 	  filename = "plot.eps",
 	  content = function(file) {
-	    setEPS()
-	    postscript(file, width=16,height=10.67, family = "Palatino")
+	    # setEPS()
+	    # postscript(file, width=16,height=10.67, family = "Helvetica")
+	    cairo_ps(file, width=16,height=10.67)
 	    print(ggplot_object)
 	    dev.off()
 	  }
 	)
-	
+
 	output$btnDownloadSVG <- downloadHandler(
 	  filename = "plot.svg",
 	  content = function(file) {
@@ -161,68 +245,56 @@ shinyServer(function(input, output, session) {
 	    dev.off()
 	  }
 	)
-	
+
 	output$btnDownloadCSV <- downloadHandler(
 	  filename = "data.csv",
 	  content = function(file) {
 	    write.csv(ggplot_object$data, file)
 	  }
 	)
-
+	
 	output$hover_info <- renderUI({
-    hover <- input$plot_hover
-    if (is.null(hover$x))
-      return(NULL)
-
-    left_pct <-
-      (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-    top_pct <-
-      (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
-
-    left_px <-
-      hover$range$left + left_pct * (hover$range$right - hover$range$left)
-    top_px <-
-      hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
-
-    style <-
-      paste0(
-        "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); "
-        ,
-        "left:",
-        left_px + 2,
-        "px; top:",
-        top_px + 2,
-        "px;"
-      )
-    near_points <- nearPoints(ggplot_data, hover)
-    if(nrow(near_points) > 0){
-      if(identical(input$category, "All Samples")){
-        category_hover = "SampleName"
-        text_hover <- ""
-        for(i in 1:nrow(near_points)){
-          text_hover <- paste0(text_hover,
-                               "<b>Sample: </b>",near_points[i,"SampleName"],
-                               "<br><b>Axis.1: </b>", sprintf("%.3f",near_points[i,"Axis.1"]),
-                               "<br><b>Axis.2: </b>", sprintf("%.3f<br>",near_points[i,"Axis.2"]) )
-        }
-        wellPanel(style = style,
-                  HTML(text_hover)
-        )
-      }else{
-        category_hover = hash_sample_names[[hash_count_samples[[input$category]]]]
-        text_hover <- ""
-        for(i in 1:nrow(near_points)){
-          text_hover <- paste0(text_hover,
-                               "<b>Sample: </b>",near_points[i,"SampleName"],
-                               sprintf("<br><b>%s: </b>%s",hash_count_samples[[input$category]], near_points[i,category_hover]),
-                               "<br><b>Axis.1: </b>", sprintf("%.3f",near_points[i,"Axis.1"]),
-                               "<br><b>Axis.2: </b>", sprintf("%.3f<br>",near_points[i,"Axis.2"]) )
-        }
-        wellPanel(style = style,
-                  HTML(text_hover)
-        )
-      }
-    }
+	  hover <- input$plot_hover
+	  if (is.null(hover$x) || is.null(hover$y)){
+	    return(NULL)
+	  }
+	  
+	  isolate(categoryColor<-input$category)
+	  isolate(categoryShape<-input$categoryShape)
+	  
+	  if(identical(categoryColor, NO_METADATA_SELECTED) |
+	     identical(categoryShape, NO_METADATA_SELECTED)){
+	    
+	    if(identical(categoryColor, NO_METADATA_SELECTED) &
+	       identical(categoryShape, NO_METADATA_SELECTED)){
+	      columns_to_show<-c("SampleName", "Axis.1", "Axis.2")
+	      renamed_columns<-c("Sample", "Axis 1", "Axis 2")
+	      top <- -55
+	    }else if(identical(categoryColor, NO_METADATA_SELECTED)){
+	      columns_to_show<-c("SampleName","categoryShape", "Axis.1", "Axis.2")
+	      renamed_columns<-c("Sample",categoryShape, "Axis 1", "Axis 2")
+	      top <- -68
+	    }else{
+	      columns_to_show<-c("SampleName","colorCategory", "Axis.1", "Axis.2")
+	      renamed_columns<-c("Sample",categoryColor, "Axis 1", "Axis 2")
+	      top <- -68
+	    }
+	  }else{
+	    if(identical(categoryColor, categoryShape)){
+	      columns_to_show<-c("SampleName","categoryColor", "Axis.1", "Axis.2")
+	      renamed_columns<-c("Sample",categoryColor, "Axis 1", "Axis 2")
+	      top <- -68
+	    }else{
+	      columns_to_show<-c("SampleName", "colorCategory", "shapeCategory", "Axis.1", "Axis.2")
+	      renamed_columns<-c("Sample", categoryColor, categoryShape, "Axis 1", "Axis 2")
+	      top <- -82 
+	    }
+	  }
+	  
+	  tooltip<-generic_point(hover, ggplot_build_object, ggplot_object$data, WIDTH,
+	                         top, 18, 18, columns_to_show, renamed_columns)
+	  
+	  return(tooltip)
 	})
 	shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
 	shinyjs::show("app-content")

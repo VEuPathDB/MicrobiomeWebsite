@@ -1,16 +1,16 @@
 library(shiny)
 library(shinyjs)
 
-alignCenter <- function(el) {
-  htmltools::tagAppendAttributes(el,
-                                 style="margin-left:auto;margin-right:auto;"
-  )
-}
+# alignCenter <- function(el) {
+#   htmltools::tagAppendAttributes(el,
+#                                  style="margin-left:auto;margin-right:auto;"
+#   )
+# }
 
 shinyUI(
 	fluidPage(
 	  useShinyjs(),
-	  includeCSS("../common/style.css"),
+	  includeCSS("../common/tooltip/tooltip.css"),
 	  includeCSS("www/style.css"),
 	  # Loading message
 	  div(id = "loading-content",
@@ -22,16 +22,24 @@ shinyUI(
 	    div(
 	      id = "app-content",
 	  fluidRow(
-	    column(4,
-	           checkboxGroupInput("measuresCheckbox", label="Measure(s)",
-	                              choices = c("Shannon" = "Shannon",
-	                                          "Simpson" = "Simpson",
-	                                          "Chao1" = "Chao1",
-	                                          "ACE" = "ACE",
-	                                          "Fisher" = "Fisher"),
-	                              selected = c("Shannon", "Simpson"), inline=T),
+	    column(3,
+	           # checkboxGroupInput("measuresCheckbox", label="Measure(s)",
+	           #                    choices = c("Shannon" = "Shannon",
+	           #                                "Simpson" = "Simpson",
+	           #                                "Chao1" = "Chao1",
+	           #                                "ACE" = "ACE",
+	           #                                "Fisher" = "Fisher"),
+	           #                    selected = c("Shannon", "Simpson"), inline=T),
+	           selectInput("measure", "Measure",
+	                       c(
+	                         "Shannon" = "Shannon",
+	                         "Simpson"="Simpson",
+	                         "Chao1" = "Chao1",
+	                         "ACE" = "ACE",
+	                         "Fisher"="Fisher"
+	                       )),
 	           div(style = "display: none;",
-	               checkboxInput("taxa_are_rows", label = "", value = T) )
+	               checkboxInput("taxa_are_rows", label = "", value = T))
 	    ),
 	    column(3, 
 	           # alignCenter(
@@ -46,7 +54,7 @@ shinyUI(
 	                              label=NULL,
 	                                           choices = c("Boxplot" = "boxplot",
 	                                                       "Dot plot" = "dotplot"),
-	                                           selected = c("boxplot"), inline=T)
+	                                           selected = c("dotplot"), inline=T)
 	               )
 	             )
 	             # )
@@ -74,17 +82,33 @@ shinyUI(
 	      title = "Alpha Diversity Overview",
 	      value = "firstTab",
 	      hidden(
-      div(id="chartLoading", style="text-align: center;",
-          # br(),br(),br(),br(),
-          h5("Calculating the alpha diversity. This could take a while..."),
-          img(src = "spinner.gif", id = "loading-spinner")
-      )),
+          div(id="chartLoading", style="text-align: center;",
+              h5("Calculating the alpha diversity. This could take a while..."),
+              img(src = "spinner.gif", id = "loading-spinner")
+          )
+        ),
 	      div(
 	        id="allSamplesArea",
+	        # fluidRow(
+	        #   column(4,
+	        #          selectInput("orderBy", "Order by",
+	        #                      c(
+	        #                        "Sample Name" = "SampleName",
+	        #                        list(`Alpha Diversity` = c("Decreasing", "Increasing")
+	        #                             )
+	        #                        # "Alpha Div. Decreasing"="decreasing",
+	        #                        # "Alpha Div. Increasing" = "increasing",
+	        #                        # "ACE" = "ACE",
+	        #                        # "Fisher"="Fisher"
+	        #                      ))
+	        #   )
+	        # ),
 	        fluidRow(
 	          column(12,
+	                 # div(style = "position:relative",
 	                 uiOutput("allSamplesChart"),
 	                 uiOutput("uiHoverAllSamples")
+	                 # )
 	          )
 	        ),
 	        fluidRow(
@@ -97,21 +121,41 @@ shinyUI(
 	    tabPanel(
 	      id="secondTab",
 	      value = "secondTab",
-	      title = "Explore metadata",
+	      title = "Explore Sample Details",
 	      fluidRow(
-	        column(10,
+	        column(4,
 	               selectizeInput(
 	                 "category",
 	                 choices = NULL,
-	                 label = " Select one or more metadata to explore the alpha diversity",
-	                 options = list(placeholder = 'Loading...'),
-	                 multiple = T,
+	                 label = " X-Axis",
+	                 options = list(placeholder = 'Choose the sample details'),
+	                 multiple = F,
 	                 width = "100%"
 	               )
-          ),
-	        column(2,
-	               actionButton("doneButton", "Generate plot", class="btn-info", style="margin-top: 25px;", width = "100%")
-	         )
+	        ),
+	        column(4,
+	               selectizeInput(
+	                 "categoryFacet1",
+	                 choices = NULL,
+	                 label = " Facet | Color",
+	                 options = list(placeholder = 'First choose the x-axis'),
+	                 multiple = F,
+	                 width = "100%"
+	               )
+	        ),
+	        column(4,
+	               selectizeInput(
+	                 "categoryFacet2",
+	                 choices = NULL,
+	                 label = "Extra facet",
+	                 options = list(placeholder = 'First choose the x-axis'),
+	                 multiple = F,
+	                 width = "100%"
+	               )
+          )
+	        # column(2,
+	        #        actionButton("doneButton", "Generate plot", class="btn-info", style="margin-top: 25px;", width = "100%")
+	        #  )
 	      ),
 	      hidden(
 	        div(id="metadataLoading", style="text-align: center;",

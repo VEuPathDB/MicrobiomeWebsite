@@ -36,7 +36,7 @@ shinyUI(
                 selectizeInput(
                   "category",
                   choices = NULL,
-                  label = "Metadata Design Factor",
+                  label = "Design Factor",
                   options = list(placeholder = 'Loading...'),
                   width = "100%"
                 )

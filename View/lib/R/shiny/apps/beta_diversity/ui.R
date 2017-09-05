@@ -5,6 +5,7 @@ shinyUI(
 	fluidPage(
 	  useShinyjs(),
 	  includeCSS("www/style.css"),
+	  includeCSS("../common/tooltip/tooltip.css"),
 	  # Loading message
 	  div(id = "loading-content",
 	      h5("Preparing graphical representation..."),
@@ -17,11 +18,11 @@ shinyUI(
 	      fluidRow(
 	        column(
 	        4,
-	        selectInput("distance", "Distance Method:",
+	        selectInput("distance", "Distance Method",
 	                    c(
+	                      "Bray-Curtis" = "bray",
 	                      "Jensen-Shannon Divergence"="jsd",
 	                      "Jaccard" = "jaccard",
-	                      "Bray-Curtis" = "bray",
 	                      "Canberra" = "canberra",
 	                      "Kulczynski"="kulczynski",
 	                      "Horn"="horn",
@@ -34,16 +35,26 @@ shinyUI(
 	            ))
 	      ),
 	      column(
-	        4,
+	        3,
 	        selectizeInput(
 	          "category",
 	          choices = NULL,
-	          label = "Split by the category:",
+	          label = "Color by",
 	          options = list(placeholder = 'Loading...'),
 	          width = "100%"
 	        )
 	      ),
-	      column(4,
+	      column(
+	        3,
+	        selectizeInput(
+	          "categoryShape",
+	          choices = NULL,
+	          label = "Shape by",
+	          options = list(placeholder = 'Loading...'),
+	          width = "100%"
+	        )
+	      ),
+	      column(2,
 	             div(
 	               style = "",
 	               fluidRow(
@@ -63,22 +74,29 @@ shinyUI(
 	      ),
 	      hidden(
 	        div(id="chartLoading", style="text-align: center;",
-	          h5("Formatting plot..."),
+	          h5("Generating plot..."),
 	          img(src = "spinner.gif", id = "loading-spinner")
 	      )),
+	      
+        div(id="betaLoading", style="text-align: center;",
+            h5("Calculating beta diversity..."),
+            img(src = "spinner.gif", id = "loading-beta")
+        ),
+	    hidden(
 	      div(
 	       id="contentArea",
   	      fluidRow(column(12,
         	  div(
         	    style = "position:relative",
-        	    plotOutput("abundanceChart",
-        	               hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
-        	               click = clickOpts("plot_click"), width = "100%"),
+        	    uiOutput("betadiversityChart"),
+        	               # hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
+        	               # click = clickOpts("plot_click"), width = "100%"),
         	    uiOutput("hover_info")
         	    )
   	        )
   	      )
 	      )
+	    )
 	    ) # end div id = "app-content",
 	  ) # end hidden
 	  ) # end fluidPage

@@ -1,0 +1,9 @@
+{
+    "path" : "~/Projects/microbiomedb/common/shiny.tooltip",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

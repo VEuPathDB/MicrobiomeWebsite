@@ -11,6 +11,7 @@ shinyUI(
   fluidPage(
     useShinyjs(),
     includeCSS("www/style.css"),
+    includeCSS("../common/tooltip/tooltip.css"),
     includeScript("www/script.js"),
     # extendShinyjs(text = jsCode),
     # Loading message
@@ -43,12 +44,12 @@ shinyUI(
            selectizeInput(
              "category",
              choices = NULL,
-             label = "Split by metadata",
+             label = "Split by sample details",
              options = list(placeholder = 'Loading...'),
              width = "100%"
            )
          ),
-         
+
          column(4,
             div(
               style = "padding-left: 1em;",
@@ -67,14 +68,12 @@ shinyUI(
             )
           )
          ),
-       
        tabsetPanel(
          id = "tabs",
          tabPanel(
            id="firstTab",
            title = "Overview",
            value = "bySample",
-           
            hidden(
              div(id="chartLoading", style="text-align: center;",
                  h5("Formatting plot..."),
@@ -86,20 +85,19 @@ shinyUI(
                  12,
                  div(style = "position:relative",
                      # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
-                       uiOutput("abundanceChart"),
+                       uiOutput("overviewChart"),
                        # ),
-                     uiOutput("hover_info"))
+                     uiOutput("overviewTooltip"))
                )),
                fluidRow(column(
                  12,
-                   dataTableOutput("by_sample_datatable")
+                   dataTableOutput("overviewDatatable")
                ))
            )
          ), # end tabPanel bySample
          tabPanel(
-           title = "Top OTU Comparison",
+           title = "Top Taxa Comparison",
            value = "byTopOTU",
-           
            hidden(
              div(id="topTabLoading", style="text-align: center;",
                  h5("Formatting plot..."),
@@ -122,7 +120,7 @@ shinyUI(
            )
          ),# end tabPabel byTopOTU
          tabPanel(
-           title = "Single OTU",
+           title = "Single Taxon",
            value = "byOTU",
              fluidRow(
                column(

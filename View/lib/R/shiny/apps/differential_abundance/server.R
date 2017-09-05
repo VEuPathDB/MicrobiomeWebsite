@@ -1,11 +1,11 @@
 library(shiny)
 library(ggplot2)
+source("../../lib/wdkDataset.R")
 library(phyloseq)
 library(data.table)
-source("../../lib/wdkDataset.R")
 library(DESeq2)
-source("../common/ggplot_extension.R")
-source("../common/eupath_functions.R")
+source("../common/ggplot_ext/eupath_default.R")
+source("../common/ggplot_ext/eupath_functions.R")
 source("../common/config.R")
 source("functions.R")
 
@@ -40,17 +40,18 @@ shinyServer(function(input, output, session) {
   physeq <- reactive({
     # Change with the file with abundances
     if(is.null(df_abundance)){
-      df_abundance <<-
-      read.csv(
-        getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir),
+      taxa<-getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
+      characteristics<-getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
+	df_abundance <<-
+        read.csv(taxa,
           sep = "\t",
           col.names = c("Sample","Taxon", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "RelativeAbundance", "AbsoluteAbundance", "EmptyColumn"),
           colClasses = c("character", "integer", "character", "character", "character", "character", "character", "character", "character", "numeric", "integer", "character")
         )
       # Change with the Characteristics file
       df_sample <<-
-      read.csv(
-        getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir),
+        read.csv(
+	characteristics,
           sep = "\t",
           col.names = c("SampleName", "Source", "Property", "Value", "Type", "Filter", "EmptyColumn"),
           colClasses = c("character", "character", "character", "character", "character", "character", "character")
@@ -72,11 +73,6 @@ shinyServer(function(input, output, session) {
       
       new_columns <- 0
       k <- 1
-      # first_with_two<-0
-      # levels_factors_two<-0
-      # levels_factors_three<-0
-      # first_with_three<-0
-      
       min_factors<-1000
       
       for(i in 1:length(columns)){
@@ -102,16 +98,35 @@ shinyServer(function(input, output, session) {
                            selected = column_factors,
                            options = list(placeholder = 'Choose the metadata to calculate the differential abundance'),
                            server = T)
-      updateSelectizeInput(session, "factor1",
-                           choices = levels_factors,
-                           selected = levels_factors[1],
-                           options = list(placeholder = 'Choose the first factor'),
-                           server = T)
-      updateSelectizeInput(session, "factor2",
-                           choices = levels_factors,
-                           selected = levels_factors[2],
-                           options = list(placeholder = 'Choose the second factor'),
-                           server = T)
+      
+      
+      if(length(levels_factors)>2){
+        choices_level <- c(paste("not",levels_factors[1]), levels_factors)
+        selected_level<-choices_level[1]
+        updateSelectizeInput(session, "factor1",
+                             choices = c("Not Factor 2", levels_factors),
+                             selected = levels_factors[1],
+                             options = list(placeholder = 'Choose the first factor'),
+                             server = T)
+        updateSelectizeInput(session, "factor2",
+                             choices = c("Not Factor 1", levels_factors),
+                             selected = levels_factors[2],
+                             options = list(placeholder = 'Choose the second factor'),
+                             server = T)
+        
+      }else{
+        updateSelectizeInput(session, "factor1",
+                             choices = levels_factors,
+                             selected = levels_factors[1],
+                             options = list(placeholder = 'Choose the first factor'),
+                             server = T)
+        updateSelectizeInput(session, "factor2",
+                             choices = levels_factors,
+                             selected = levels_factors[2],
+                             options = list(placeholder = 'Choose the second factor'),
+                             server = T)
+      }
+      
     } # end if df_abundance is not null
     
     if(identical(input$taxonLevel, "Phylum")){
@@ -166,6 +181,12 @@ shinyServer(function(input, output, session) {
   observeEvent(input$exchangeBtn, {
     isolate(factor1<-input$factor1)
     isolate(factor2<-input$factor2)
+    if(identical(factor1, "Not Factor 2")){
+      factor1<-"Not Factor 1"
+    }
+    if(identical(factor2, "Not Factor 1")){
+      factor2<-"Not Factor 2"
+    }
     updateSelectizeInput(session, "factor1", selected = factor2, server = F)
     updateSelectizeInput(session, "factor2", selected = factor1, server = F)
   })
@@ -175,16 +196,30 @@ shinyServer(function(input, output, session) {
     if(!identical(category, "")){
       category_column <- hash_sample_names[[hash_count_samples[[category]]]]
       levels_category<-sort(unique(SAMPLE[[category_column]]))
-      updateSelectizeInput(session, "factor1",
-                           choices = levels_category,
-                           selected = levels_category[1],
-                           options = list(placeholder = 'Choose the first factor'),
-                           server = F)
-      updateSelectizeInput(session, "factor2",
-                           choices = levels_category,
-                           selected = levels_category[2],
-                           options = list(placeholder = 'Choose the second factor'),
-                           server = F)
+      
+      if(length(levels_category)>2){
+        updateSelectizeInput(session, "factor1",
+                             choices = c("Not Factor 2", levels_category),
+                             selected = levels_category[1],
+                             options = list(placeholder = 'Choose the first factor'),
+                             server = F)
+        updateSelectizeInput(session, "factor2",
+                             choices = c("Not Factor 1", levels_category),
+                             selected = levels_category[2],
+                             options = list(placeholder = 'Choose the second factor'),
+                             server = F)
+      }else{
+        updateSelectizeInput(session, "factor1",
+                             choices = levels_category,
+                             selected = levels_category[1],
+                             options = list(placeholder = 'Choose the first factor'),
+                             server = F)
+        updateSelectizeInput(session, "factor2",
+                             choices = levels_category,
+                             selected = levels_category[2],
+                             options = list(placeholder = 'Choose the second factor'),
+                             server = F)
+      }
     }
   })
   
@@ -198,7 +233,7 @@ shinyServer(function(input, output, session) {
     factor2<-input$factor2
     taxon_level<-input$taxonLevel
     if(!identical(category, "") & !identical(factor1, "") & !identical(factor2, "")){
-      if(identical(factor1, factor2)){
+      if(identical(factor1, factor2) | (identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1") )){
         output$datatableOutput<-renderDataTable(NULL)
         shinyjs::disable("btnDownloadPNG")
         shinyjs::disable("btnDownloadSVG")
@@ -278,16 +313,24 @@ shinyServer(function(input, output, session) {
     chart<-NULL
     shinyjs::hide("chartContent")
     shinyjs::show("chartLoading")
-    if(!identical(factor1, factor2)){
+    if(!identical(factor1, factor2) &  !(identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1") ) ){
       category_column <- hash_sample_names[[hash_count_samples[[category]]]]
       
       df_sample_filter <- SAMPLE[,category_column]
       
-      df_sample_filter<-df_sample_filter[df_sample_filter[,category_column]==factor1 | df_sample_filter[,category_column]==factor2]
-      
+      # print(head(OTU))
+      # print(head(TAX))
+      # print(head(df_sample_filter))
+      if(identical(factor2, "Not Factor 1")){
+        df_sample_filter[df_sample_filter[,category_column]!=factor1,category_column]<-"Not Factor 1"
+      }else if(identical(factor1, "Not Factor 2")){
+        df_sample_filter[df_sample_filter[,category_column]!=factor2,category_column]<-"Not Factor 2"
+      }else{
+        df_sample_filter<-df_sample_filter[df_sample_filter[,category_column]==factor1 | df_sample_filter[,category_column]==factor2]
+      }
       new_physeq_obj<-phyloseq(OTU, TAX, sample_data(df_sample_filter))
+      # new_physeq_obj <- subset_samples(new_physeq_obj, !is.na(category_column))
       new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj)
-      
       # creating factor with levels in the same order as the select input factors
       sample_data(new_physeq_obj)[[category_column]] <- factor(sample_data(new_physeq_obj)[[category_column]], levels=c(factor1,factor2))
       
@@ -300,7 +343,6 @@ shinyServer(function(input, output, session) {
       geoMeans = apply(counts(diagdds), 1, gm_mean)
       diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
       diagdds = DESeq(diagdds, fitType="local", quiet=T)
-      
       #investigating test result
       res = results(diagdds)
       
@@ -383,8 +425,14 @@ shinyServer(function(input, output, session) {
         
         category_column<-hash_sample_names[[hash_count_samples[[category]]]]
         df_sample_selected <- df_sample.formatted[,c("SampleName", category_column)]
-        df_sample_selected <- df_sample_selected[df_sample_selected[,category_column] == factor1 | df_sample_selected[,category_column] == factor2,]
         
+        if(identical(factor2, "Not Factor 1")){
+          df_sample_selected[df_sample_selected[,category_column]!=factor1,category_column]<-"Not Factor 1"
+        }else if(identical(factor1, "Not Factor 2")){
+          df_sample_selected[df_sample_selected[,category_column]!=factor2,category_column]<-"Not Factor 2"
+        }else{
+          df_sample_selected <- df_sample_selected[df_sample_selected[,category_column] == factor1 | df_sample_selected[,category_column] == factor2,]
+        }
         
         data_merged <- merge(df_sample_selected, otu_for_plot_filtered, by = "SampleName", all.y=F)
         data_merged[,category_column] <- factor(data_merged[,category_column], levels=c(factor1,factor2))
@@ -435,7 +483,7 @@ shinyServer(function(input, output, session) {
     filename = "plot.eps",
     content = function(file) {
       setEPS()
-      postscript(file, width=16,height=10.67, family = "Palatino")
+      postscript(file, width=16,height=10.67, family = "Helvetica")
       print(ggplot_object)
       dev.off()
     }

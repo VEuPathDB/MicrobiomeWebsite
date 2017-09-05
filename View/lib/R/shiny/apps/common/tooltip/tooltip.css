@@ -1,0 +1,93 @@
+.div_tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  border-color: rgb(240,230,140);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  background-color: rgb(240,230,140);
+  border-radius: 6px;
+  color: black;
+  text-align: left;
+  text-decoration: none;
+  font-size:0.8em;
+}
+
+.tooltip_right {
+  border-right: 4px solid transparent;
+}
+
+.tooltip_right:after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%; /* To the left of the tooltip */
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent DarkKhaki transparent transparent;
+}
+
+.tooltip_left {
+  border-left: 4px solid transparent;
+}
+
+.tooltip_left:after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    left: 100%; /* To the left of the tooltip */
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent DarkKhaki;
+}
+
+/* next lines are only for boxplot tooltip*/
+.text_boxplot div {
+ position: absolute; z-index:100;
+  border: 4px solid #c2e1f5;
+  /*border: 4px solid black;*/
+  /*background-color: #88b7d5;*/
+  background-color: white;
+  /*color: #0e8276;*/
+  color: black;
+  text-align: left;
+  text-decoration: none;
+  font-size:1em;
+}
+
+.div_boxplot div {
+  position: absolute; z-index:100;
+  border: 4px solid #c2e1f5;
+  pointer-events: none;
+  /*border: 4px solid black;*/
+  /*background-color: #88b7d5;*/
+  background-color: white;
+  /*color: #0e8276;*/
+  color: black;
+  text-align: left;
+  text-decoration: none;
+  font-size:1em;
+}
+
+.boxplot_right div::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+
+.boxplot_left div::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    left: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent black;
+}
+
