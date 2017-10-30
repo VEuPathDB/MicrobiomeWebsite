@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlAnswer>
+<!--
+   <record>
+       <attribute name="headline"></attribute>
+       <attribute name="date"></attribute>
+       <attribute name="tag"></attribute>
+       <attribute name="category"></attribute>
+       <attribute name="item">
+           
+         <![CDATA[
+
+          ]]>
+       </attribute>
+    </record>
+-->
+
+
+<record>
+  <attribute name="headline">MicrobiomeDB 3 Released</attribute>
+  <attribute name="date">7 Sep 2017 13:00</attribute>
+  <attribute name="tag">microbiome_3_release</attribute>
+  <attribute name="category">release</attribute>
+  <attribute name="item">
+    <![CDATA[
+      <p><strong>We are pleased to announce the release of MicrobiomeDB 3</strong></p>
+      <section>
+        <h3><b>No New data in this release</b></h3>
+      </section>
+      <section>
+        <h3><b>New features in this release</b></h3>
+        <ul>
+        <li>The alpha diversity app has been updated to better handle longitudinal data.  A linear model fit is applied to the data, allowing users to compare alpha divesity trends over time between two covariates.
+        <li>The beta diversity app has been modified to improve the calculation and display of large numbers of samples.  In addition, users can now map both point color and shape to sample details.
+        <li>A new correlation app has been added, bringing the total number of apps in the analysis tools section to five.  This 'Corr' app allows users to visualize Spearman's correlation and statistics between taxa and categorical variables, or between the categorical variables themselves.
+        </ul>
+      </section>
+      <section>
+        <aside>
+           Note: Our bimonthly database releases incorporate new data and correct old data when necessary. Changes in annotation and new experimental data may slightly alter your search results by increasing or decreasing the number of hits. When search parameters change with a new release, we invalidate (Ø) the search and ask you to rerun it. When sample IDs are updated or removed, we map the old IDs to the new ones, remove the old IDs from your Basket, and leave your Favorites page alone. 
+        </aside>
+      </section>
+    ]]>
+  </attribute>
+</record>
+
+
+ 
+</xmlAnswer>
+
