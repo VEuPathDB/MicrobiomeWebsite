@@ -12,6 +12,9 @@ source("../common/config.R")
 
 
 shinyServer(function(input, output, session) {
+  
+  parameters_file <- "parameters.txt"
+  
   # Declaring some global variables
   # df_abundance, df_sample and df_sample.formatted are declared global to avoid 
   # multiple file reading in the reactive section
@@ -45,6 +48,7 @@ shinyServer(function(input, output, session) {
     if(is.null(mstudy_obj)){
 abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
 sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
+      # parameters_file <<- getWdkDatasetFile("parameters.txt", session, FALSE, dataStorageDir)
       
       mstudy_obj <<- import.eupath(
         taxa_abundance_path = abundance_file,
@@ -52,16 +56,65 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         aggregate_by = input$taxonLevel
       )
       
+      # if(!file.exists(parameters_file)){
+        selected <- NO_METADATA_SELECTED
+      # }else{
+      #   parameters<-read_parameters()
+      #   
+      #   server_parameters<-subset(parameters, side=="server")
+      #   client_parameters<-subset(parameters, side=="client", select=c("type", "id","values"))
+      #   
+      #   apply(client_parameters, 1, update_parameter, session=session)
+      #   
+      #   selected <- server_parameters[id=="category",values]
+      #   
+      # }
+      
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED,
                                        mstudy_obj$get_filtered_categories()),
-                           selected = NO_METADATA_SELECTED,
+                           selected = selected,
                            options = list(placeholder = 'Choose metadata to split the chart'),
                            server = TRUE)
     }
-    
     mstudy_obj
   })
+  
+  update_parameter <- function(list_parameters, session){
+    type<-list_parameters[[1]]
+    id<-list_parameters[[2]]
+    value<-list_parameters[[3]]
+    substr(type, 1, 1) <- toupper(substr(type, 1, 1))
+    f<-get(paste0("update",type))
+    if(type %chin% c("TextInput", "DateInput", "NumericInput", "SliderInput", "TextAreaInput")){
+      f(session=session, inputId=id, value=value)
+    }else{
+      f(session=session, inputId=id, selected=value)
+    }
+  }
+  
+  read_parameters <- function(){
+    dt<-NULL
+    if(file.exists(parameters_file)){
+      dt<-fread(parameters_file)
+    }
+    dt
+  }
+  
+  set_parameters <- function(){
+    if(!file.exists(parameters_file)){
+      file.create(parameters_file)
+    }
+    # objectType, clientServer, variableName, value
+    objects_types<-c("selectInput", "selectizeInput")
+    side<-c("client", "server")
+    variables<-c("taxonLevel", "category")
+    category<-ifelse(identical(input$category, ""), NO_METADATA_SELECTED, input$category)
+    values<-c(input$taxonLevel, category)
+    dt<-data.table(type=objects_types, side=side, id=variables, values=values)
+    # fwrite(dt, parameters_file)
+    write.csv(dt,parameters_file, row.names=FALSE, quote=FALSE)
+  }
   
   observeEvent(input$taxonLevel,{
     mstudy<-load_microbiome_data()
@@ -93,16 +146,25 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     category<-input$category
     taxon_level<-input$taxonLevel
     result_to_show<-NULL
+    is_numeric <- F
     if(!identical(input$category, "")){
       shinyjs::hide("divContent")
       shinyjs::show("chartLoading")
+      
+      # set_parameters()
+      
       quantity_samples <- mstudy$get_sample_count()
       #TODO test for input without 10 different taxa
       top_ten<-mstudy$get_top_n_by_mean(taxon_level, NUMBER_TAXA)
+      
       ordered<-c(mstudy$otu_table$get_ordered_otu(NUMBER_TAXA))
+      
       rev_ordered<-c("Other", rev(ordered))
+      
       wrapped_labels<-wrap_column(rev_ordered)
+      
       top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=rev_ordered)
+
       if(identical(category, NO_METADATA_SELECTED)){
         chart<-ggplot(top_ten, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
           geom_bar(stat="identity", position="stack", color="black")+
@@ -120,28 +182,106 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           coord_flip(expand=F)
       }else{
         dt_metadata<-mstudy$get_metadata_as_column(category)
-        dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
+        # dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
         
-        col_renamed <- make.names(category)
-        all_columns <- colnames(dt_metadata)
-        all_columns[2]<-col_renamed
-        colnames(dt_metadata)<-all_columns
-        
-        chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
-          geom_bar(stat="identity", position="stack", color="black")+
-          facet_even(as.formula(paste("~ ",col_renamed)), ncol=1, scales='free_y')+
-          theme_eupath_default(
-            legend.title.align=0.4,
-            legend.title = element_text(colour="black", size=rel(1), face="bold"),
-            axis.text.y=element_blank(),
-            axis.ticks.y = element_blank()
-          )+
-          scale_fill_manual(values=eupath_pallete, name=taxon_level,
-                            labels = c(wrapped_labels),
-                            guide = guide_legend(reverse=TRUE, keywidth = 1.7, keyheight = 1.7)
-          )+
-          labs(x="Samples", y="Phylogenetic Relative Abundance")+
-          coord_flip(expand=F)
+        if(identical(class(dt_metadata[[category]]), "numeric")){
+          is_numeric<-T
+          samples<-mstudy$get_sample_names()
+          combinations<-data.table(expand.grid(samples, rev_ordered))
+          combinations[,Abundance:=0]
+          colnames(combinations)<-c("SampleName", taxon_level, "Abundance")
+          
+          merged<-merge(combinations, top_ten, by=c("SampleName", taxon_level), all.x=T)
+          selected_levels <- get_columns_taxonomy(taxon_level)
+          
+          merged[,c("Abundance.x", selected_levels[1:(length(selected_levels)-1)]):=NULL]
+          colnames(merged)<-c("SampleName", taxon_level, "Abundance")
+
+          merged[is.na(Abundance),Abundance:=0]
+          
+          merged1<-merge(dt_metadata, merged, by="SampleName")
+          merged1<-merged1[complete.cases(merged1),]
+          merged1[,SampleName:=NULL]
+          setorderv(merged1, category)
+          
+          uniq_days<-unique(merged1[[category]])
+          qt_days<-length(uniq_days)
+          if(qt_days > 25){
+            min<-min(merged1[[category]])
+            max<-max(merged1[[category]])
+            steps <- floor(max/20)
+            
+            groups<-seq(min,max,steps)
+            lg<-length(groups)
+            groups[lg]<-max
+            
+            merged1[,(category):=cut(merged1[[category]], breaks = 25, labels = F)]
+            merged1[,(category):=as.integer(groups[merged1[[category]]])]
+            # category<-"age in days"
+            # merged1[,(category) := NULL]
+            merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+            
+            merged1<-unique(merged1)
+          }else{
+            # colnames(merged1)<-c("group", taxon_level, "Abundance")
+            merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+            merged1<-unique(merged1)
+          }
+          
+          
+          
+          # uniq_days<-unique(merged1[[category]])
+          # qt_days<-length(uniq_days)
+          # min<-min(merged1[[category]])
+          # max<-max(merged1[[category]])
+          # steps <- max/25
+          # groups<-seq(min+steps,max+steps,steps)
+          # 
+          # merged1[,(category):=cut(merged1[[category]], breaks = 25, labels = F)]
+          # merged1[,(category):=as.integer(groups[merged1[[category]]])]
+          # 
+          # # merged1[,(category):=NULL]
+          # merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+          # 
+          # merged1<-unique(merged1)
+          
+          # merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+          # merged1[,SampleName:=NULL]
+          # merged1<-unique(merged1)
+          
+          merged1[[taxon_level]]<-factor(merged1[[taxon_level]], levels = rev_ordered)
+          
+          chart<-ggplot(merged1, aes_string(x=sprintf("`%s`",category),
+                                       y="Abundance", fill=taxon_level)) + 
+            geom_area(alpha=0.9, size=1)+
+            theme_eupath_default(
+              legend.title.align=0.4,
+              legend.title = element_text(colour="black", size=rel(1), face="bold")
+            )+
+            scale_fill_manual(values=eupath_pallete, name=taxon_level,
+                              labels = c(wrapped_labels),
+                              guide = guide_legend(reverse=TRUE, keywidth = 1.7, keyheight = 1.7)
+            )+
+            labs(x=category, y="Phylogenetic Relative Abundance")+
+            coord_cartesian(expand=F)
+        }else{
+          dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
+          chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
+            geom_bar(stat="identity", position="stack", color="black")+
+            facet_even(as.formula(sprintf("~ `%s`", category)), ncol=1, scales='free_y')+
+            theme_eupath_default(
+              legend.title.align=0.4,
+              legend.title = element_text(colour="black", size=rel(1), face="bold"),
+              axis.text.y=element_blank(),
+              axis.ticks.y = element_blank()
+            )+
+            scale_fill_manual(values=eupath_pallete, name=taxon_level,
+                              labels = c(wrapped_labels),
+                              guide = guide_legend(reverse=TRUE, keywidth = 1.7, keyheight = 1.7)
+            )+
+            labs(x="Samples", y="Phylogenetic Relative Abundance")+
+            coord_flip(expand=F)
+        }
       }
       
       ggplot_object<<-chart
@@ -151,10 +291,10 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         chart
       })
       
-      if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
+      if(quantity_samples<MAX_SAMPLES_NO_RESIZE | is_numeric){
         result_to_show<-plotOutput("plotWrapper",
-               hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
-               click = clickOpts("plot_click"),
+               hover = hoverOpts("overview_hover", delay = 100, delayType = "debounce"),
+               click = clickOpts("overview_click"),
                dblclick = dblclickOpts("plot_dblclick"),
                width = paste0(WIDTH,"px"), height = "500px"
              )
@@ -176,6 +316,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
   topAbundance <- function(){}
 
   output$chartByTopOTU <- renderUI({
+    
     mstudy <- load_microbiome_data()
     category<-input$category
     taxon_level<-input$taxonLevel
@@ -196,6 +337,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       
       top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=ordered)
       
+      ADDITIONAL<-1
+      
       if(identical(category, NO_METADATA_SELECTED)){
         chart<-ggplot(top_ten, aes_string(x=taxon_level, y="Abundance"))+
           geom_boxplot()+
@@ -210,21 +353,58 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         dt_metadata<-mstudy$get_metadata_as_column(category)
         dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
         
-        col_renamed <- make.names(category)
-        all_columns <- colnames(dt_metadata)
-        all_columns[2]<-col_renamed
-        colnames(dt_metadata)<-all_columns
-        
-        chart<-ggplot(dt_metadata, aes_string(x=taxon_level, y="Abundance", fill=col_renamed))+
-          geom_boxplot()+
-          theme_eupath_default(
-            legend.title = element_text(colour="black", face="bold"),
-            axis.text.x = element_text(angle = 45, hjust = 1)
-          )+
-          guides(fill = guide_legend(keywidth = 1.7, keyheight = 1.7))+
-          labs(x=taxon_level, y="Relative Abundance",fill=category)+
-          scale_y_continuous(limits = c(0, 1))+
-          scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
+        # col_renamed <- make.names(category)
+        # all_columns <- colnames(dt_metadata)
+        # all_columns[2]<-col_renamed
+        # colnames(dt_metadata)<-all_columns
+       
+        if(identical(class(dt_metadata[[category]]), "numeric")){
+          ADDITIONAL <- 1.5
+          dt_metadata<-dt_metadata[!is.na(get(category)),]
+          qt_days <- length(unique(dt_metadata[[category]]))
+          
+          if(qt_days > 25){
+            min<-min(dt_metadata[[category]])
+            max<-max(dt_metadata[[category]])
+            steps <- floor(max/20)
+            groups<-seq(min,max,steps)
+            lg<-length(groups)
+            groups[lg]<-max
+            
+            dt_metadata[,(category):=cut(dt_metadata[[category]], breaks = 25, labels = F)]
+            dt_metadata[,(category):=as.integer(groups[dt_metadata[[category]]])]
+          # #   # category<-"age in days"
+          # #   # merged1[,(category) := NULL]
+          #   dt_metadata[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+          # #   
+          #   dt_metadata<-unique(merged1)
+          # # }else{
+          # #   # colnames(merged1)<-c("group", taxon_level, "Abundance")
+          # #   merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
+          # #   merged1<-unique(merged1)
+          }
+          
+          chart<-ggplot(dt_metadata, aes(x=get(category), y=Abundance, group=get(category)))+
+            geom_boxplot()+
+            facet_even(as.formula(sprintf("~ `%s`", taxon_level)), ncol=1, scales='free_y')+
+            theme_eupath_default(
+              legend.title = element_text(colour="black", face="bold"),
+              axis.text.x = element_text(angle = 45, hjust = 1)
+            )+
+            labs(x=category, y="Relative Abundance")
+            
+        }else{
+          chart<-ggplot(dt_metadata, aes(x=get(taxon_level), y=Abundance, fill=get(category)))+
+            geom_boxplot()+
+            theme_eupath_default(
+              legend.title = element_text(colour="black", face="bold"),
+              axis.text.x = element_text(angle = 45, hjust = 1)
+            )+
+            guides(fill = guide_legend(keywidth = 1.7, keyheight = 1.7))+
+            labs(x=taxon_level, y="Relative Abundance",fill=category)+
+            scale_y_continuous(limits = c(0, 1))+
+            scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
+        }
         
         # calculating stats
         samples_with_details <- mstudy$sample_table$get_samples_details(category)
@@ -299,6 +479,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         }
       } # end else: if(identical(category, NO_METADATA_SELECTED))
       
+      
       ggplot_by_top_otu_object <<- chart
       ggplot_build_by_top_otu_object <<- ggplot_build(chart)
       
@@ -306,9 +487,10 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         chart
       })
       
-      result_to_show<-plotOutput("topOtuPlotWrapper", width = "100%", height = "500px",
+      result_to_show<-plotOutput("topOtuPlotWrapper", width = "100%", height = paste0(500*ADDITIONAL,"px"),
                                  dblclick = dblclickOpts("plot_dbclick_top_otu"),
                                  hover = hoverOpts("plot_hoverByTopOTU", delay = 60, delayType = "throttle"))
+      
       
       shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
       shinyjs::show("topTabContent")
@@ -411,8 +593,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         category_col <- 2
         if(quantity==2){
           result<-wilcox.test(merged_to_stats[[abundance_col]]~merged_to_stats[[category_col]], conf.int = T, conf.level = 0.95)
-          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Wilcoxon rank sum test: W = %f, p-value = %.8f</li></ul>",
-                                       result$statistic, result$p.value))
+          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Wilcoxon rank sum test: W = %f, p-value = %.8f</li></ul>", result$statistic, result$p.value))
         }else{
           result<-kruskal.test(merged_to_stats[[category_col]]~merged_to_stats[[abundance_col]])
           html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
@@ -440,6 +621,11 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     hover <- input$overview_hover
     if (is.null(hover) || is.null(hover$x) || is.null(hover$y) || round(hover$x) <0 || round(hover$y)<0 ) {
       return(NULL)
+    }
+    if(!identical(input$category, NO_METADATA_SELECTED)){
+      if(identical(class(ggplot_object$data[[input$category]]), "numeric")){
+        return(NULL)
+      }
     }
     barplot_points(ggplot_object, hover, WIDTH, T, 6, 6, 6)
   })
@@ -510,6 +696,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     if (is.null(click$y))
       return(NULL)
     
+    if(!identical(input$category, NO_METADATA_SELECTED)){
+      if(identical(class(ggplot_object$data[[input$category]]), "numeric")){
+        return(NULL)
+      }
+    }
+    
     mstudy <- load_microbiome_data()
     sample_names <- mstudy$get_sample_names()
     
@@ -517,17 +709,25 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       sample <- sample_names[round(click$y)]
     }else{
       pnl_layout <- ggplot_build_object$layout$panel_layout
-      renamed_category <- make.names(input$category)
-      panel_index <- pnl_layout[ pnl_layout[[renamed_category]] == click$panelvar1 , ]$PANEL
+      category <- input$category
+      if(is.null(click$panelvar1)){
+        panel_index <- pnl_layout[ is.na(pnl_layout[[category]]) , ]$PANEL
+      }else{
+        panel_index <- subset(pnl_layout, get(category) == click$panelvar1)$PANEL
+      }
       lvls <- ggplot_build_object$layout$panel_ranges[[panel_index]]$y.labels
       sample <- lvls[round(click$y)]
     }
     raw_data<-mstudy$get_otu_by_sample(sample)[,c("SampleName", input$taxonLevel , "Abundance"),with=F]
-    # raw_data<-subset(raw_data, Abundance>0)
+    
+    colnames(raw_data)<-c("Sample", colnames(raw_data)[2:length(colnames(raw_data))])
+    
     raw_data$Abundance<-format(raw_data$Abundance, scientific = F)
+    
     raw_data[, (input$taxonLevel) := lapply(.SD, function(x){
       sprintf("<a class='link_table' onclick='goToOtuTab(\"%s\")'>%s</a>", x, x)
       } ), .SDcols=input$taxonLevel]
+    
     output$overviewDatatable <- renderDataTable(raw_data,
                                                   escape = F,
                                                   options = list(
