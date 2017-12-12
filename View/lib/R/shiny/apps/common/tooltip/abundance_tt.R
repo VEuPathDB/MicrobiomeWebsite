@@ -14,17 +14,24 @@ barplot_points <- function(ggplot_object, hover, width, stacked = F, right_offse
   
   if(stacked){
     # if hover$panelvar1 is null means that there is no facet
-    if(!is.null(hover$panelvar1)){
+    if(nrow(g$layout$panel_layout)==1){
+      panel_index<-1
+    }else{
       panel_layout<-g$layout$panel_layout # panel_layout returns a data.frame
-                                          # with all panels currently being shown
+      # with all panels currently being shown
       # the forth column is the data used to facet the plot
       facet_column <- colnames(panel_layout)[4]
       # hover$panelvar1 returns the name of the facet where the mouse are hovering
-      panel_hover <- subset(panel_layout, get(facet_column)==hover$panelvar1)
+      if(is.null(hover$panelvar1)){
+        # panel_hover<-panel_layout[is.na(panel_layout[[facet_column]]),]
+        panel_hover <- subset(panel_layout, is.na(get(facet_column))) 
+        
+      }else{
+        panel_hover <- subset(panel_layout, get(facet_column)==hover$panelvar1) 
+      }
       panel_index <- panel_hover$PANEL
-    }else{
-      panel_index<-1
     }
+    
     # it's necessary to know the panel index since when the plot it's facet, each
     # panel has its own axis (there is one y=1 for each panel)
     

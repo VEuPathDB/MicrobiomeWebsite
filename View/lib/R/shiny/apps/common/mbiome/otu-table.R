@@ -133,14 +133,15 @@ OTUClass <- R6Class("OTUClass",
         if(!is.null(taxonomy_level) & !identical(taxonomy_level, private$last_taxonomy)){
           self$reshape(taxonomy_level = taxonomy_level)
         }
-
+        
         top_n <- head(private$summarized_means, n)
         top_n$Abundance<-format(top_n$Abundance, scientific = F)
+        
         private$ordered_n_otu <- top_n[[private$last_taxonomy]]
-
+        
         filtered_ten<-subset(private$summarized_otu,
                              get(private$last_taxonomy)%chin%top_n[[private$last_taxonomy]] )
-
+        
         if(add_other){
           grouped_dt<-filtered_ten[,list(Abundance=sum(Abundance)),by="SampleName"]
           grouped_dt[,Abundance:=1-Abundance]

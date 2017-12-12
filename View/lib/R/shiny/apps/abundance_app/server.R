@@ -69,7 +69,9 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       #   selected <- server_parameters[id=="category",values]
       #   
       # }
+        
       
+        
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED,
                                        mstudy_obj$get_filtered_categories()),
@@ -622,8 +624,9 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     if (is.null(hover) || is.null(hover$x) || is.null(hover$y) || round(hover$x) <0 || round(hover$y)<0 ) {
       return(NULL)
     }
+    
     if(!identical(input$category, NO_METADATA_SELECTED)){
-      if(identical(class(ggplot_object$data[[input$category]]), "numeric")){
+      if(is.numeric(ggplot_object$data[[input$category]])){
         return(NULL)
       }
     }
@@ -646,7 +649,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       boxplot_hover <- get_single_boxplot_hover(hover, line_data$xmax, line_data$x, line_data$ymin, line_data$lower, line_data$middle, line_data$upper, line_data$ymax, WIDTH) # removed text to treat better
       # in the future
       HTML(boxplot_hover)
-       
     }
   })
   
@@ -697,7 +699,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       return(NULL)
     
     if(!identical(input$category, NO_METADATA_SELECTED)){
-      if(identical(class(ggplot_object$data[[input$category]]), "numeric")){
+      if(is.numeric(ggplot_object$data[[input$category]])){
         return(NULL)
       }
     }
