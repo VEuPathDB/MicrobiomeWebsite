@@ -13,8 +13,6 @@ source("../common/config.R")
 
 shinyServer(function(input, output, session) {
   
-  parameters_file <- "parameters.txt"
-  
   # Declaring some global variables
   # df_abundance, df_sample and df_sample.formatted are declared global to avoid 
   # multiple file reading in the reactive section
@@ -48,7 +46,11 @@ shinyServer(function(input, output, session) {
     if(is.null(mstudy_obj)){
 abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
 sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
-      # parameters_file <<- getWdkDatasetFile("parameters.txt", session, FALSE, dataStorageDir)
+      # if(exists("biom")){
+      #   print("eh null")
+      # }
+abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
+sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
       
       mstudy_obj <<- import.eupath(
         taxa_abundance_path = abundance_file,

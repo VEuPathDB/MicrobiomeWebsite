@@ -10,7 +10,7 @@ SampleClass <- R6Class("SampleClass",
         initialize = function(sample_dt = NA) {
           
           #to do remove that after iodice fix the duplicated metadata
-          self$sample_dt <- subset(sample_dt, Property!="source")
+          self$sample_dt <- subset(sample_dt, Property!="source" | (Property=="source" & Value!="Pet" ) ) 
           
           private$sample_names <- unique(sample_dt$SampleName)
           
