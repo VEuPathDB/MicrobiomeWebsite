@@ -188,7 +188,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         dt_metadata<-mstudy$get_metadata_as_column(category)
         # dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
         
-        if(identical(class(dt_metadata[[category]]), "numeric")){
+        if( is.numeric(dt_metadata[[category]])){
           is_numeric<-T
           samples<-mstudy$get_sample_names()
           combinations<-data.table(expand.grid(samples, rev_ordered))
@@ -254,7 +254,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           # merged1<-unique(merged1)
           
           merged1[[taxon_level]]<-factor(merged1[[taxon_level]], levels = rev_ordered)
-          
           chart<-ggplot(merged1, aes_string(x=sprintf("`%s`",category),
                                        y="Abundance", fill=taxon_level)) + 
             geom_area(alpha=0.9, size=1)+
@@ -270,6 +269,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
             coord_cartesian(expand=F)
         }else{
           dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
+          dt_metadata<-subset(dt_metadata, !is.na(get(input$category)))
           chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
             geom_bar(stat="identity", position="stack", color="black")+
             facet_even(as.formula(sprintf("~ `%s`", category)), ncol=1, scales='free_y')+
@@ -356,13 +356,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }else{ # end if identical(category, NO_METADATA_SELECTED)
         dt_metadata<-mstudy$get_metadata_as_column(category)
         dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
-        
-        # col_renamed <- make.names(category)
-        # all_columns <- colnames(dt_metadata)
-        # all_columns[2]<-col_renamed
-        # colnames(dt_metadata)<-all_columns
        
-        if(identical(class(dt_metadata[[category]]), "numeric")){
+        if(is.numeric(dt_metadata[[category]])){
           ADDITIONAL <- 1.5
           dt_metadata<-dt_metadata[!is.na(get(category)),]
           qt_days <- length(unique(dt_metadata[[category]]))
@@ -387,7 +382,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           # #   merged1[,Abundance:=mean(Abundance), by=c(category, taxon_level)]
           # #   merged1<-unique(merged1)
           }
-          
+          dt_metadata<-subset(dt_metadata, !is.na(get(category)))
           chart<-ggplot(dt_metadata, aes(x=get(category), y=Abundance, group=get(category)))+
             geom_boxplot()+
             facet_even(as.formula(sprintf("~ `%s`", taxon_level)), ncol=1, scales='free_y')+
@@ -398,6 +393,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
             labs(x=category, y="Relative Abundance")
             
         }else{
+          dt_metadata<-subset(dt_metadata, !is.na(get(category)))
           chart<-ggplot(dt_metadata, aes(x=get(taxon_level), y=Abundance, fill=get(category)))+
             geom_boxplot()+
             theme_eupath_default(

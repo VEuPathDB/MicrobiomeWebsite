@@ -1,10 +1,19 @@
 library(R6)
 library(data.table)
+library(biom)
 
 source("../common/mbiome/mbiome-data.R")
 source("../common/mbiome/mbiome-utils.R")
 source("../common/mbiome/otu-table.R")
 source("../common/mbiome/sample-table.R")
+
+
+import.biom <- function(biom_path, metadata_details=NULL, aggregate_by="Phylum", use_relative_abundance=T){
+  
+  
+  
+  
+}
 
 #' Function to read input files for MicrobiomeDB and returns a MicrobiomeData
 #'   object.
