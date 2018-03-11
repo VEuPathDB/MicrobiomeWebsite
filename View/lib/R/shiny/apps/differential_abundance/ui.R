@@ -18,13 +18,7 @@ shinyUI(
             fluidRow(
               column(
                 3,
-                selectInput(
-                  "taxonLevel",
-                  label = "Taxonomic level",
-                  choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                  selected = "Species",
-                  width = '100%'
-                ),
+                uiOutput("taxonLevel"),
                 # this div is not showed, this is just a workaround to load the files in a reactive environment
                 div(style = "display: none;",
                     checkboxInput(

@@ -2,6 +2,7 @@
 library(shiny)
 library(data.table)
 library(ggplot2)
+library(httr)
 source("../../lib/wdkDataset.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/abundance_tt.R")
@@ -28,6 +29,20 @@ shinyServer(function(input, output, session) {
 
   ggplot_object <- NULL
   ggplot_build_object <- NULL
+
+  properties <- NULL
+  propUrl <- NULL
+
+  load_properties <- reactive({
+    if(is.null(propUrl)) {
+      propUrl <<- getPropertiesUrl(session)
+      properties <<- try(fread(propUrl))
+
+      if (grepl("Error", properties)) {
+        properties <<- NULL
+      }
+    }
+  })
 
   load_microbiome_data <- reactive({
     if(is.null(mstudy_obj)){
@@ -64,6 +79,73 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     mstudy_obj
   })
 
+  output$taxonLevel <- renderUI({
+    load_properties()
+    if (is.null(properties)) {
+      mySelected <- "Species"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$taxonLevel"]
+    }
+
+    selectInput(
+             "taxonLevel",
+             label = "Taxonomy level",
+             choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
+             selected = mySelected,
+             width = '100%'
+           )
+  })
+
+  output$corType <- renderUI({
+    load_properties()
+    if (is.null(properties)) {
+      mySelected <- "Taxon"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$corType"]
+    }
+
+    selectInput(
+             "corType",
+             label = "Correlation type",
+             #"Metadata vs Metadata"="Metadata"
+             choices = c("Taxon vs Sample Detail"="tm",
+                         "Sample Detail vs Sample Detail"="mm"),
+             selected = mySelected,
+             width = '100%'
+           )
+  })
+
+  output$pvalueCutoff <- renderUI({
+    load_properties()
+    if (is.null(properties)) {
+      mySelected <- 0.05
+    } else {
+      mySelected <- properties$selected[properties$input == "input$pvalueCutoff"]
+    }
+
+    sliderInput("pvalueCutoff", 
+                "Filter pvalue", 
+                min = 0, max = 1, 
+                value = mySelected, 
+                step = 0.01, 
+                width = "100%",
+                ticks=T)
+  })
+
+  observeEvent({input$taxonLevel
+               input$corType
+               input$pvalueCutoff}, {
+
+    text <- paste0("input\tselected\n",
+                   "input$taxonLevel\t", input$taxonLevel, "\n",
+                   "input$corType\t", input$corType, "\n",
+                   "input$pvalueCutoff\t", input$pvalueCutoff
+            )
+
+    PUT(propUrl, body = "")
+    PUT(propUrl, body = text)
+
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
   correlationChartFunction <- function(){}
   output$correlationChart <- renderUI({

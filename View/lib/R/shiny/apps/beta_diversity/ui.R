@@ -18,16 +18,7 @@ shinyUI(
 	      fluidRow(
 	        column(
 	        4,
-	        selectInput("distance", "Distance Method",
-	                    c(
-	                      "Bray-Curtis" = "bray",
-	                      "Jensen-Shannon Divergence"="jsd",
-	                      "Jaccard" = "jaccard",
-	                      "Canberra" = "canberra",
-	                      "Kulczynski"="kulczynski",
-	                      "Horn"="horn",
-	                      "Mountford"="mountford"
-	                    )),
+                uiOutput("distance"),
 	        # this div is not showed, this is just a workaround to load the files in a reactive environment
 	        div(style = "display: none;",
 	            checkboxInput(

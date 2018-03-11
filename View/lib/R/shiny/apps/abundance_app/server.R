@@ -3,6 +3,7 @@ library(shiny)
 library(ggplot2)
 source("../../lib/wdkDataset.R")
 library(data.table)
+library(httr)
 source("functions.R")
 source("../common/ggplot_ext/facet_even.R")
 source("../common/ggplot_ext/eupath_default.R")
@@ -41,6 +42,20 @@ shinyServer(function(input, output, session) {
   
   hash_colors<-NULL
   
+  propUrl <- NULL
+  properties <- NULL
+
+  load_properties <- reactive({
+    if(is.null(propUrl)) {
+      propUrl <<- getPropertiesUrl(session)
+      properties <<- try(fread(propUrl))
+
+      if (grepl("Error", properties)) {
+        properties <<- NULL
+      }
+    }
+  })
+
   load_microbiome_data <- reactive({
     if(is.null(mstudy_obj)){
 abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
@@ -51,18 +66,57 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         sample_path = sample_file,
         aggregate_by = input$taxonLevel
       )
-      
+
+      if (is.null(properties)) {
+        mySelected <- NO_METADATA_SELECTED
+      } else {
+        mySelected <- properties$selected[properties$input == "input$category"]
+      }
+ 
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED,
                                        mstudy_obj$get_filtered_categories()),
-                           selected = NO_METADATA_SELECTED,
+                           selected = mySelected,
                            options = list(placeholder = 'Choose metadata to split the chart'),
                            server = TRUE)
     }
     
     mstudy_obj
   })
-  
+
+  #to use propUrl, need to create all ui from server file.
+  output$taxLevel <- renderUI({
+    load_properties()
+    if (is.null(properties)) {
+      mySelected <- "Phylum"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$taxonLevel"]
+    }
+
+    selectInput(
+      "taxonLevel",
+      label = "Taxonomic level",
+      choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
+      selected = mySelected,
+      width = '100%'
+    )
+  })
+
+  observeEvent({input$taxonLevel
+               input$category
+               input$filterOTU}, {
+
+    text <- paste0("input\tselected\n",
+                   "input$taxonLevel\t", input$taxonLevel, "\n",
+                   "input$category\t", input$category, "\n",
+                   "input$filterOTU\t", input$filterOTU
+            )
+
+    PUT(propUrl, body = "")
+    PUT(propUrl, body = text)
+
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
   observeEvent(input$taxonLevel,{
     mstudy<-load_microbiome_data()
     
@@ -77,14 +131,24 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       ordered<-c(mstudy$otu_table$get_ordered_otu(NUMBER_TAXA))
       rev_ordered<-c("Other", rev(ordered))
       names(hash_colors) <<- rev_ordered
-      
+     
+      if (is.null(properties)) {
+        mySelected <- global_otus[1]
+      } else { 
+        if (input$taxonLevel != properties$selected[properties$input == "input$taxonLevel"]) {
+          mySelected <- global_otus[1]
+        } else {
+          mySelected <- properties$selected[properties$input == "input$filterOTU"]
+        }
+      }
+
       updateSelectizeInput(session, "filterOTU",
                            choices = global_otus,
-                           selected = global_otus[1],
+                           selected = mySelected,
                            options = list(placeholder = 'Choose a OTU'),
                            server = TRUE)
     }
-  })
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
   
   overviewChart <- function(){}
   
@@ -146,7 +210,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       
       ggplot_object<<-chart
       ggplot_build_object<<-ggplot_build(chart)
-      
+
       output$plotWrapper<-renderPlot({
         chart
       })
@@ -301,7 +365,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       
       ggplot_by_top_otu_object <<- chart
       ggplot_build_by_top_otu_object <<- ggplot_build(chart)
-      
+ 
       output$topOtuPlotWrapper<-renderPlot({
         chart
       })
@@ -424,7 +488,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       
       ggplot_by_otu_object <<- chart
       ggplot_build_by_otu_object <<- ggplot_build(chart)
-      
+ 
       shinyjs::hide("singleOtuLoading", anim = TRUE, animType = "slide")
       shinyjs::show("singleOtuContent")
     }else{

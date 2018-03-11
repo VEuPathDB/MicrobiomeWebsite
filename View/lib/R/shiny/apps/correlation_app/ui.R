@@ -25,13 +25,7 @@ shinyUI(
          fluidRow(
            column(
            2,
-           selectInput(
-             "taxonLevel",
-             label = "Taxonomy level",
-             choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
-             selected = "Species",
-             width = '100%'
-           ),
+           uiOutput("taxonLevel"),
            # this div is not showed, this is just a workaround to load the files in a reactive environment
            div(style = "display: none;",
                checkboxInput(
@@ -40,15 +34,7 @@ shinyUI(
          ),
          column(
            4,
-           selectInput(
-             "corType",
-             label = "Correlation type",
-             #"Metadata vs Metadata"="Metadata"
-             choices = c("Taxon vs Sample Detail"="tm",
-                         "Sample Detail vs Sample Detail"="mm"),
-             selected = "Taxon",
-             width = '100%'
-           )
+           uiOutput("corType")
          ),
          hidden(
          column(3,
@@ -89,8 +75,7 @@ shinyUI(
          ), # end fluidRow toolbar
         fluidRow(
           column(12,
-            sliderInput("pvalueCutoff", "Filter pvalue", min = 0, max = 1, value = 0.05,
-                        step = 0.01, width = "100%",ticks=T),
+            uiOutput("pvalueCutoff"),
             tags$style(type="text/css", "#pvalueCutoff {height:10px;}")
           )
         ),

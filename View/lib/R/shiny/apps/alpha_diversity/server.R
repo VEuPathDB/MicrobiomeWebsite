@@ -3,6 +3,7 @@ library(ggplot2)
 source("../../lib/wdkDataset.R")
 library(phyloseq)
 library(data.table)
+library(httr)
 source("../common/mbiome/mbiome-reader.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
@@ -51,7 +52,19 @@ shinyServer(function(input, output, session) {
   maximum_samples_without_resizing <- 40
   minimum_height_after_resizing <- 9
   
+  propUrl <- NULL
+  properties <- NULL
+
   load_microbiome_data <- reactive({
+    if (is.null(propUrl)) {
+      propUrl <<- getPropertiesUrl(session)
+      properties <<- try(fread(propUrl))
+
+      if (grepl("Error", properties)) {
+        properties <<- NULL
+      }
+    }
+
     if(is.null(mstudy_obj)){
 abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
 sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
@@ -63,22 +76,34 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         use_relative_abundance = F
       )
       
-      
+      if (is.null(properties)) {
+        mySelectedCategory <- NULL
+        mySelectedFacet1 <- NULL
+        mySelectedFacet2 <- NULL
+      } else {
+        mySelectedCategory <- properties$selected[properties$input == "input$category"]
+        mySelectedFacet1 <- properties$selected[properties$input == "input$categoryFacet1"]
+        mySelectedFacet2 <- properties$selected[properties$input == "input$categoryFacet2"]
+      }     
+ 
       updateSelectizeInput(session, "category",
                            choices = c(
                                        mstudy_obj$get_filtered_categories()),
+                           selected = mySelectedCategory,
                            options = list(placeholder = NO_METADATA_SELECTED),
                            server = TRUE)
       
       updateSelectizeInput(session, "categoryFacet1",
                            choices = c(
                              mstudy_obj$get_filtered_categories()),
+                           selected = mySelectedFacet1,
                            options = list(placeholder = "First choose the x-axis"),
                            server = TRUE)
       
       updateSelectizeInput(session, "categoryFacet2",
                            choices = c(
                              mstudy_obj$get_filtered_categories()),
+                           selected = mySelectedFacet2,
                            options = list(placeholder = "First choose the x-axis"),
                            server = TRUE)
       
@@ -92,7 +117,60 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     mstudy_obj
   })
   
-  
+  #create all ui in server file so we can set values based on propUrl
+  output$measure <- renderUI({
+    load_microbiome_data()
+    if (is.null(properties)) {
+      mySelected <- NULL
+    } else {
+      mySelected <- properties$selected[properties$input == "input$measure"]
+    }
+
+    selectInput("measure",
+                label = "Measure",
+                choices = c("Shannon" = "Shannon",
+                            "Simpson"="Simpson",
+                            "Chao1" = "Chao1",
+                            "ACE" = "ACE",
+                            "Fisher"="Fisher"),
+                selected = mySelected)
+  })  
+
+  output$plotType <- renderUI({
+    load_microbiome_data()
+    if (is.null(properties)) {
+      mySelected <- "dotplot"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$plotTypeRadio"]
+    }
+
+    radioButtons("plotTypeRadio",
+                 label=NULL,
+                 choices = c("Boxplot" = "boxplot",                                                           "Dot plot" = "dotplot"),
+                 selected = mySelected, 
+                 inline=T)
+
+  })
+
+  observeEvent({input$measure
+               input$plotTypeRadio
+               input$category
+               input$categoryFacet1
+               input$categoryFacet2}, {
+
+    text <- paste0("input\tselected\n",
+                   "input$measure\t", input$measure, "\n",
+                   "input$plotTypeRadio\t", input$plotTypeRadio, "\n",
+                   "input$category\t", input$category, "\n",
+                   "input$categoryFacet1\t", input$categoryFacet1, "\n",
+                   "input$categoryFacet2\t", input$categoryFacet2
+            )
+
+    PUT(propUrl, body = "")
+    PUT(propUrl, body = text)
+
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
   allSamples <- function(){}
   
   output$allSamplesChart <- renderUI({

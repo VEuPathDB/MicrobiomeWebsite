@@ -4,6 +4,7 @@ source("../../lib/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(DESeq2)
+library(httr)
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/ggplot_ext/eupath_functions.R")
 source("../common/config.R")
@@ -37,6 +38,20 @@ shinyServer(function(input, output, session) {
   maximum_samples_without_resizing <- 65
   minimum_height_after_resizing <- 6
   
+  propUrl <- NULL
+  properties <- NULL
+
+  load_properties <- reactive({
+    if(is.null(propUrl)) {
+      propUrl <<- getPropertiesUrl(session)
+      properties <<- try(fread(propUrl))
+
+      if (grepl("Error", properties)) {
+        properties <<- NULL
+      }
+    }
+  })
+
   physeq <- reactive({
     # Change with the file with abundances
     if(is.null(df_abundance)){
@@ -92,10 +107,27 @@ shinyServer(function(input, output, session) {
       
       columns <<- new_columns
       
+      if (is.null(properties)) {
+        mySelectedCategory <- column_factors
+        mySelectedFactor1 <- levels_factors[1]
+        mySelectedFactor2 <- levels_factors[2]
+      } else {
+        mySelectedCategory <- properties$selected[properties$input == "input$category"]
+        message("input$category", input$category)
+        message("mySelectedCategory", mySelectedCategory)
+        if (input$category != mySelectedCategory) {
+          mySelectedFactor1 <- levels_factors[1]
+          mySelectedFactor2 <- levels_factors[2]
+        } else {
+          mySelectedFactor1 <- properties$selected[properties$input == "input$factor1"]
+          mySelectedFactor2 <- properties$selected[properties$input == "input$factor2"]
+        }
+      }
+
       levels_factors<-sort(levels_factors)
       updateSelectizeInput(session, "category",
                            choices = c(columns[2:length(columns)]),
-                           selected = column_factors,
+                           selected = mySelectedCategory,
                            options = list(placeholder = 'Choose the metadata to calculate the differential abundance'),
                            server = T)
       
@@ -105,24 +137,24 @@ shinyServer(function(input, output, session) {
         selected_level<-choices_level[1]
         updateSelectizeInput(session, "factor1",
                              choices = c("Not Factor 2", levels_factors),
-                             selected = levels_factors[1],
+                             selected = mySelectedFactor1,
                              options = list(placeholder = 'Choose the first factor'),
                              server = T)
         updateSelectizeInput(session, "factor2",
                              choices = c("Not Factor 1", levels_factors),
-                             selected = levels_factors[2],
+                             selected = mySelectedFactor2,
                              options = list(placeholder = 'Choose the second factor'),
                              server = T)
         
       }else{
         updateSelectizeInput(session, "factor1",
                              choices = levels_factors,
-                             selected = levels_factors[1],
+                             selected = mySelectedFactor1,
                              options = list(placeholder = 'Choose the first factor'),
                              server = T)
         updateSelectizeInput(session, "factor2",
                              choices = levels_factors,
-                             selected = levels_factors[2],
+                             selected = mySelectedFactor2,
                              options = list(placeholder = 'Choose the second factor'),
                              server = T)
       }
@@ -178,6 +210,41 @@ shinyServer(function(input, output, session) {
   
   observeFunctions <- function(){}
   
+  #to use propUrl, need to create all ui from server file.
+  output$taxonLevel <- renderUI({
+    load_properties()
+    if (is.null(properties)) {
+      mySelected <- "Species"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$taxonLevel"]
+    }
+
+    selectInput(
+      "taxonLevel",
+      label = "Taxonomic level",
+      choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
+      selected = mySelected,
+      width = '100%'
+    )
+  })
+
+  observeEvent({input$taxonLevel
+               input$category
+               input$factor1
+               input$factor2}, {
+
+    text <- paste0("input\tselected\n",
+                   "input$taxonLevel\t", input$taxonLevel, "\n",
+                   "input$category\t", input$category, "\n",
+                   "input$factor1\t", input$factor1, "\n",
+                   "input$factor2\t", input$factor2
+            )
+
+    PUT(propUrl, body = "")
+    PUT(propUrl, body = text)
+
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
   observeEvent(input$exchangeBtn, {
     isolate(factor1<-input$factor1)
     isolate(factor2<-input$factor2)
@@ -196,27 +263,41 @@ shinyServer(function(input, output, session) {
     if(!identical(category, "")){
       category_column <- hash_sample_names[[hash_count_samples[[category]]]]
       levels_category<-sort(unique(SAMPLE[[category_column]]))
-      
+  
+    mySelectedCategory <- properties$selected[properties$input == "input$category"]
+    if (is.null(properties)) {
+      mySelectedFactor1 <- levels_factors[1]
+      mySelectedFactor2 <- levels_factors[2]
+    } else {
+      if (category != mySelectedCategory) {
+        mySelectedFactor1 <- levels_factors[1]
+        mySelectedFactor2 <- levels_factors[2]
+      } else {
+        mySelectedFactor1 <- properties$selected[properties$input == "input$factor1"]
+        mySelectedFactor2 <- properties$selected[properties$input == "input$factor2"]
+      }
+    }
+    
       if(length(levels_category)>2){
         updateSelectizeInput(session, "factor1",
                              choices = c("Not Factor 2", levels_category),
-                             selected = levels_category[1],
+                             selected = mySelectedFactor1,
                              options = list(placeholder = 'Choose the first factor'),
                              server = F)
         updateSelectizeInput(session, "factor2",
                              choices = c("Not Factor 1", levels_category),
-                             selected = levels_category[2],
+                             selected = mySelectedFactor2,
                              options = list(placeholder = 'Choose the second factor'),
                              server = F)
       }else{
         updateSelectizeInput(session, "factor1",
                              choices = levels_category,
-                             selected = levels_category[1],
+                             selected = mySelectedFactor1,
                              options = list(placeholder = 'Choose the first factor'),
                              server = F)
         updateSelectizeInput(session, "factor2",
                              choices = levels_category,
-                             selected = levels_category[2],
+                             selected = mySelectedFactor2,
                              options = list(placeholder = 'Choose the second factor'),
                              server = F)
       }

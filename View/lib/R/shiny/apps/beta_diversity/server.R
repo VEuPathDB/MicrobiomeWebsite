@@ -4,6 +4,7 @@ library(ggplot2)
 source("../../lib/wdkDataset.R")
 library(data.table)
 library(phyloseq)
+library(httr)
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
 source("../common/mbiome/mbiome-reader.R")
@@ -46,7 +47,19 @@ shinyServer(function(input, output, session) {
   ggplot_build_object<-NULL
   ggplot_data <- NULL
 
+  propUrl <- NULL
+  properties <- NULL
+
   load_microbiome_data <- reactive({
+    if (is.null(propUrl)) {
+      propUrl <<- getPropertiesUrl(session)
+      properties <<- try(fread(propUrl))
+
+      if (grepl("Error", properties)) {
+        properties <<- NULL
+      }
+    }
+
     if(is.null(mstudy_obj)){
 abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
 sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
@@ -56,22 +69,66 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         sample_path = sample_file,
         aggregate_by = "Species"
       )
-      
+     
+      if (is.null(properties)) {
+        mySelectedCategory <- NO_METADATA_SELECTED
+        mySelectedShape <- NO_METADATA_SELECTED
+      } else {
+        mySelectedCategory <- properties$selected[properties$input == "input$category"]
+        mySelectedShape <- properties$selected[properties$input == "input$categoryShape"]
+      }
+ 
       filtered_categories <- mstudy_obj$get_filtered_categories()
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
-                           selected = NO_METADATA_SELECTED,
+                           selected = mySelectedCategory,
                            options = list(placeholder = 'Select sample details'),
                            server = TRUE)
       updateSelectizeInput(session, "categoryShape",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
-                           selected = NO_METADATA_SELECTED,
+                           selected = mySelectedShape,
                            options = list(placeholder = 'Select sample details'),
                            server = TRUE)
     }
     
     mstudy_obj
   })
+
+  output$distance <- renderUI({
+    load_microbiome_data()
+    if (is.null(properties)) {
+      mySelected <- NULL
+    } else {
+      mySelected <- properties$selected[properties$input == "input$distance"]
+    }
+
+    selectInput("distance", 
+                label = "Distance Method",
+                choices = c("Bray-Curtis" = "bray",
+                            "Jensen-Shannon Divergence"="jsd",
+                            "Jaccard" = "jaccard",
+                            "Canberra" = "canberra",
+                            "Kulczynski"="kulczynski",
+                            "Horn"="horn",
+                            "Mountford"="mountford"),
+                selected = mySelected)
+
+  })
+
+  observeEvent({input$distance
+               input$category
+               input$categoryShape}, {
+
+    text <- paste0("input\tselected\n",
+                   "input$distance\t", input$distance, "\n",
+                   "input$category\t", input$category, "\n",
+                   "input$categoryShape\t", input$categoryShape
+            )
+
+    PUT(propUrl, body = "")
+    PUT(propUrl, body = text)
+
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
   observeEvent(input$distance,{
     mstudy_obj <- load_microbiome_data()

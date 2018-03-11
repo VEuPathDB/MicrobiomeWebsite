@@ -30,14 +30,7 @@ shinyUI(
 	           #                                "ACE" = "ACE",
 	           #                                "Fisher" = "Fisher"),
 	           #                    selected = c("Shannon", "Simpson"), inline=T),
-	           selectInput("measure", "Measure",
-	                       c(
-	                         "Shannon" = "Shannon",
-	                         "Simpson"="Simpson",
-	                         "Chao1" = "Chao1",
-	                         "ACE" = "ACE",
-	                         "Fisher"="Fisher"
-	                       )),
+	           uiOutput("measure"),
 	           div(style = "display: none;",
 	               checkboxInput("taxa_are_rows", label = "", value = T))
 	    ),
@@ -50,11 +43,7 @@ shinyUI(
 	             fluidRow(
 	               div(
 	                 style = "padding-top: 0.65em;",
-	                 radioButtons("plotTypeRadio",
-	                              label=NULL,
-	                                           choices = c("Boxplot" = "boxplot",
-	                                                       "Dot plot" = "dotplot"),
-	                                           selected = c("dotplot"), inline=T)
+                         uiOutput("plotType")
 	               )
 	             )
 	             # )
