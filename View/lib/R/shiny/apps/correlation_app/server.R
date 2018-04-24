@@ -149,6 +149,10 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
 
   correlationChartFunction <- function(){}
   output$correlationChart <- renderUI({
+    if (is.null(input$taxonLevel)) {
+      return()
+    }
+
     shinyjs::hide("divContent")
     shinyjs::show("chartLoading")
     mstudy <- load_microbiome_data()

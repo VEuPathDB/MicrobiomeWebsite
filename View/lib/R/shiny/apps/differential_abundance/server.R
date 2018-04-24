@@ -113,8 +113,6 @@ shinyServer(function(input, output, session) {
         mySelectedFactor2 <- levels_factors[2]
       } else {
         mySelectedCategory <- properties$selected[properties$input == "input$category"]
-        message("input$category", input$category)
-        message("mySelectedCategory", mySelectedCategory)
         if (input$category != mySelectedCategory) {
           mySelectedFactor1 <- levels_factors[1]
           mySelectedFactor2 <- levels_factors[2]
@@ -266,12 +264,12 @@ shinyServer(function(input, output, session) {
   
     mySelectedCategory <- properties$selected[properties$input == "input$category"]
     if (is.null(properties)) {
-      mySelectedFactor1 <- levels_factors[1]
-      mySelectedFactor2 <- levels_factors[2]
+      mySelectedFactor1 <- levels_category[1]
+      mySelectedFactor2 <- levels_category[2]
     } else {
       if (category != mySelectedCategory) {
-        mySelectedFactor1 <- levels_factors[1]
-        mySelectedFactor2 <- levels_factors[2]
+        mySelectedFactor1 <- levels_category[1]
+        mySelectedFactor2 <- levels_category[2]
       } else {
         mySelectedFactor1 <- properties$selected[properties$input == "input$factor1"]
         mySelectedFactor2 <- properties$selected[properties$input == "input$factor2"]
@@ -306,6 +304,10 @@ shinyServer(function(input, output, session) {
   
   mainChart <- function(){}
   output$mainChart <- renderUI({
+    if (is.null(input$taxonLevel)) {
+      return()
+    }
+
     physeq1<-physeq()
     
     isolate(category<-input$category)
