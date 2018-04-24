@@ -172,8 +172,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
   allSamples <- function(){}
-  
+ 
   output$allSamplesChart <- renderUI({
+    if (is.null(input$measure) | is.null(input$plotTypeRadio)) {
+      return()
+    }
+
     shinyjs::hide("allSamplesArea")
     shinyjs::show("chartLoading")
     
