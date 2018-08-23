@@ -13,6 +13,10 @@ shinyUI(
     includeCSS("www/style.css"),
     includeCSS("../common/tooltip/tooltip.css"),
     includeScript("www/script.js"),
+    tags$style(type="text/css",
+              ".shiny-output-error { visibility: hidden; }",
+              ".shiny-output-error:before { visibility: hidden; }"
+    ),
     # extendShinyjs(text = jsCode),
     # Loading message
     div(id = "loading-content",
