@@ -26,7 +26,7 @@ shinyServer(function(input, output, session) {
   
   richness_object <- NULL
   
-  all_measures <- c("Chao1", "ACE", "Shannon", "Simpson", "Fisher")
+  all_measures <- c("Chao1", "ACE", "Shannon", "Simpson")#, "Fisher")
   
   phyloseq_obj <- NULL
   
@@ -131,8 +131,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
                 choices = c("Shannon" = "Shannon",
                             "Simpson"="Simpson",
                             "Chao1" = "Chao1",
-                            "ACE" = "ACE",
-                            "Fisher"="Fisher"),
+                            "ACE" = "ACE"),
+                            #"Fisher"="Fisher"),
                 selected = mySelected)
   })  
 
