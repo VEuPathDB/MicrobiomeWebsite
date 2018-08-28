@@ -10,6 +10,10 @@ shinyUI(
     useShinyjs(),
     includeCSS("www/style.css"),
     includeCSS("../common/tooltip/tooltip.css"),
+    tags$style(type="text/css",
+              ".shiny-output-error { visibility: hidden; }",
+              ".shiny-output-error:before { visibility: hidden; }"
+    ),
     #includeCSS("www/hint.min.css"),
     #includeScript("www/script.js"),
     # extendShinyjs(text = jsCode),
