@@ -503,7 +503,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         )
       )
     }else{
-      colnames(richness_merged)<-c("Sample Name", category, measure)
+      #message(colnames(richness_merged))
+      if (length(colnames(richness_merged)) > 3) {
+        colnames(richness_merged)<-c("Sample Name", category, measure, "std error")
+      } else { 
+        colnames(richness_merged)<-c("Sample Name", category, measure)
+      }
       output$byMetadataDt = renderDataTable(
         richness_merged,
         options = list(
