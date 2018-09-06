@@ -79,16 +79,17 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }
  
       filtered_categories <- mstudy_obj$get_filtered_categories()
+      #message("filtered_categories: ", filtered_categories)
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedCategory,
-                           options = list(placeholder = 'Select sample details'),
-                           server = TRUE)
+                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           #server = TRUE)
       updateSelectizeInput(session, "categoryShape",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedShape,
-                           options = list(placeholder = 'Select sample details'),
-                           server = TRUE)
+                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           #server = TRUE)
     }
     
     mstudy_obj
@@ -153,7 +154,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     result_to_show<-NULL
     
     if(identical(categoryColor, "") & identical(categoryShape, "") ){
-      result_to_show <- h5(class="alert alert-warning", "Please choose at least.")
+      result_to_show <- h5(class="alert alert-warning", "Please choose either color or shape.")
     }else if( !is.null(ordination_obj) ) {
       shapes <- c(19,17,15,4,8,5:13)
       quantity_shape <- length(mstudy_obj$sample_table$get_unique_details(categoryShape))
