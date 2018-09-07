@@ -5,6 +5,7 @@ source("../../lib/wdkDataset.R")
 library(data.table)
 library(httr)
 source("functions.R")
+source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/facet_even.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/abundance_tt.R")
@@ -185,12 +186,19 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }else{
         dt_metadata<-mstudy$get_metadata_as_column(category)
         dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
-        
+      
+        #colnames(dt_metadata)[2] <- make.names(category)
         col_renamed <- make.names(category)
         all_columns <- colnames(dt_metadata)
         all_columns[2]<-col_renamed
         colnames(dt_metadata)<-all_columns
         
+        #check for numeric category and bin
+        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+        if (is.numeric(dt_metadata[[col_renamed]])) {
+          dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
+        }
+
         chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
           geom_bar(stat="identity", position="stack", color="black")+
           facet_even(as.formula(paste("~ ",col_renamed)), ncol=1, scales='free_y')+
@@ -278,7 +286,13 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         all_columns <- colnames(dt_metadata)
         all_columns[2]<-col_renamed
         colnames(dt_metadata)<-all_columns
-        
+       
+        #check for numeric category and bin
+        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+        if (is.numeric(dt_metadata[[col_renamed]])) {
+          dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
+        }
+ 
         chart<-ggplot(dt_metadata, aes_string(x=taxon_level, y="Abundance", fill=col_renamed))+
           geom_boxplot()+
           theme_eupath_default(
@@ -449,6 +463,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         col_renamed <- make.names(category)
         colnames(metadata_as_column)<-c("SampleName", col_renamed)
         
+        #check for numeric category and bin
+        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+        if (is.numeric(metadata_as_column[[col_renamed]])) {
+          metadata_as_column[[col_renamed]] <- rcut_number(metadata_as_column[[col_renamed]])
+        }
+
         # to plot we don't show samples with 0 abundance
         merged_to_plot<-merge(otu_data, metadata_as_column, by="SampleName")
         # to calculate the statistics we work with all samples

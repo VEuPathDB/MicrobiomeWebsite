@@ -5,6 +5,7 @@ source("../../lib/wdkDataset.R")
 library(data.table)
 library(phyloseq)
 library(httr)
+source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
 source("../common/mbiome/mbiome-reader.R")
@@ -201,7 +202,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         merged<-merge(sample_details, ps_data, by="SampleName")
         
         colnames(merged)<-c("SampleName", "categoryShape", colnames(ps_data)[1:(length(ps_data)-1)])
-        
+       
+        #bin shape col if numeric
+        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+        if (is.numeric(merged$categoryShape)) {
+          merged$categoryShape <- rcut_number(merged$categoryShape)
+        } 
         
         chart<-ggplot(merged, aes(Axis.1, Axis.2))+
           geom_point(aes(size = 4, alpha= 0.5, shape=categoryShape))+
@@ -216,6 +222,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           merged<-merge(sample_details, ps_data, by="SampleName")
           colnames(merged)<-c("SampleName", "categoryColor", colnames(ps_data)[1:(length(ps_data)-1)])
           
+          #bin shape col if numeric
+          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+          if (is.numeric(merged$categoryColor)) {
+            merged$categoryColor <- rcut_number(merged$categoryColor)
+          }
+
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=categoryColor, shape=categoryColor))+
             guides(size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
@@ -229,6 +241,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           merged<-merge(sample_details, ps_data, by="SampleName")
           colnames(merged)<-c("SampleName", "colorCategory", "shapeCategory", colnames(ps_data)[1:(length(ps_data)-1)])
           
+          #bin shape col if numeric
+          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+          if (is.numeric(merged$shapeCategory)) {
+            merged$shapeCategory <- rcut_number(merged$shapeCategory)
+          }
+
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=colorCategory, shape=shapeCategory))+
             # guides(size=FALSE, alpha=F, colour = guide_legend(order = 1), shape = guide_legend(order = 2))+
