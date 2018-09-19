@@ -5,6 +5,7 @@ source("../../lib/wdkDataset.R")
 library(data.table)
 library(phyloseq)
 library(httr)
+source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
 source("../common/mbiome/mbiome-reader.R")
@@ -79,16 +80,17 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }
  
       filtered_categories <- mstudy_obj$get_filtered_categories()
+      #message("filtered_categories: ", filtered_categories)
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedCategory,
-                           options = list(placeholder = 'Select sample details'),
-                           server = TRUE)
+                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           #server = TRUE)
       updateSelectizeInput(session, "categoryShape",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedShape,
-                           options = list(placeholder = 'Select sample details'),
-                           server = TRUE)
+                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           #server = TRUE)
     }
     
     mstudy_obj
@@ -153,7 +155,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     result_to_show<-NULL
     
     if(identical(categoryColor, "") & identical(categoryShape, "") ){
-      result_to_show <- h5(class="alert alert-warning", "Please choose at least.")
+      result_to_show <- h5(class="alert alert-warning", "Please choose either color or shape.")
     }else if( !is.null(ordination_obj) ) {
       shapes <- c(19,17,15,4,8,5:13)
       quantity_shape <- length(mstudy_obj$sample_table$get_unique_details(categoryShape))
@@ -200,7 +202,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         merged<-merge(sample_details, ps_data, by="SampleName")
         
         colnames(merged)<-c("SampleName", "categoryShape", colnames(ps_data)[1:(length(ps_data)-1)])
-        
+       
+        #bin shape col if numeric
+        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+        if (is.numeric(merged$categoryShape)) {
+          merged$categoryShape <- rcut_number(merged$categoryShape)
+        } 
         
         chart<-ggplot(merged, aes(Axis.1, Axis.2))+
           geom_point(aes(size = 4, alpha= 0.5, shape=categoryShape))+
@@ -215,6 +222,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           merged<-merge(sample_details, ps_data, by="SampleName")
           colnames(merged)<-c("SampleName", "categoryColor", colnames(ps_data)[1:(length(ps_data)-1)])
           
+          #bin shape col if numeric
+          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+          if (is.numeric(merged$categoryColor)) {
+            merged$categoryColor <- rcut_number(merged$categoryColor)
+          }
+
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=categoryColor, shape=categoryColor))+
             guides(size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
@@ -228,6 +241,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           merged<-merge(sample_details, ps_data, by="SampleName")
           colnames(merged)<-c("SampleName", "colorCategory", "shapeCategory", colnames(ps_data)[1:(length(ps_data)-1)])
           
+          #bin shape col if numeric
+          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+          if (is.numeric(merged$shapeCategory)) {
+            merged$shapeCategory <- rcut_number(merged$shapeCategory)
+          }
+
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=colorCategory, shape=shapeCategory))+
             # guides(size=FALSE, alpha=F, colour = guide_legend(order = 1), shape = guide_legend(order = 2))+

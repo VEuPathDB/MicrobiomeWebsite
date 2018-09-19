@@ -4,6 +4,7 @@ source("../../lib/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(httr)
+source("../../lib/ebrc_functions.R")
 source("../common/mbiome/mbiome-reader.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
@@ -353,6 +354,19 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       # print("richness_merged")
       
       if(identical(class(richness_merged[[category]]),"numeric")){
+        #if xaxis is numeric, only bin second facet to start
+        if (is.numeric(richness_merged[[horizontalCategory]])) {
+          richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+        }
+
+        #if box plot also bin xaxis and facet1
+        if (!identical(plotRadio, "dotplot")) {
+          richness_merged[[category]] <- rcut_number(richness_merged[[category]])
+          if (is.numeric(richness_merged[[verticalCategory]])) {
+          richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+        }
+        }   
+
         if(!condVertical){
           chart<-ggplot(richness_merged,
                         aes_string(x=sprintf("`%s`", category), y=measure, color=sprintf("`%s`", verticalCategory)))+
@@ -401,6 +415,14 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         })
         
       }else{
+        #bin numeric facets for all cases where xaxis is not numeric
+        if (is.numeric(richness_merged[[horizontalCategory]])) {
+          richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+        }
+        if (is.numeric(richness_merged[[verticalCategory]])) {
+          richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+        } 
+ 
         chart<-ggplot(richness_merged, aes_string(sprintf("`%s`",category), measure))+
           theme_eupath_default(
             panel.border = element_rect(colour="black", size=1, fill=NA),
@@ -503,7 +525,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         )
       )
     }else{
-      colnames(richness_merged)<-c("Sample Name", category, measure)
+      #message(colnames(richness_merged))
+      if (length(colnames(richness_merged)) > 3) {
+        colnames(richness_merged)<-c("Sample Name", category, measure, "std error")
+      } else { 
+        colnames(richness_merged)<-c("Sample Name", category, measure)
+      }
       output$byMetadataDt = renderDataTable(
         richness_merged,
         options = list(

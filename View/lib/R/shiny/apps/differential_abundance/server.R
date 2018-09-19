@@ -5,6 +5,7 @@ library(phyloseq)
 library(data.table)
 library(DESeq2)
 library(httr)
+source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/ggplot_ext/eupath_functions.R")
 source("../common/config.R")
@@ -82,15 +83,23 @@ shinyServer(function(input, output, session) {
       colnames(df_sample.formatted) <<- corrected_columns
       names(corrected_columns) <- columns 
       
+      #convert to number based on df_sample
+      myNums <- unique(df_sample$Property[df_sample$Type == "number" & df_sample$Filter == "range"])
+      myNums <- make.names(myNums)
+      df_sample.formatted[myNums] <- sapply(df_sample.formatted[myNums], as.numeric)
+
       hash_sample_names <<- corrected_columns
-      
-      SAMPLE <<- sample_data(df_sample.formatted)
       
       new_columns <- 0
       k <- 1
       min_factors<-1000
       
       for(i in 1:length(columns)){
+        #bin numbers into two groups to compare
+        if (is.numeric(df_sample.formatted[[hash_sample_names[[columns[i]]]]])) {
+          df_sample.formatted[[hash_sample_names[[columns[i]]]]] <- rcut_number(df_sample.formatted[[hash_sample_names[[columns[i]]]]], 2)
+        }
+
         unique_factors <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])
         if(length(levels(unique_factors)) > 1){
           new_columns[k] <- paste0(columns[i], " (",length(levels(unique_factors)), ")")
@@ -104,16 +113,25 @@ shinyServer(function(input, output, session) {
           k <- k+1
         }
       }
-      
+     
+      SAMPLE <<- sample_data(df_sample.formatted)  
       columns <<- new_columns
       
       if (is.null(properties)) {
-        mySelectedCategory <- column_factors
-        mySelectedFactor1 <- levels_factors[1]
-        mySelectedFactor2 <- levels_factors[2]
+        message("column_factors: ", column_factors)
+        mySelectedCategory <- NULL # column_factors
+        mySelectedFactor1 <- NULL #levels_factors[1]
+        mySelectedFactor2 <- NULL #levels_factors[2]
       } else {
         mySelectedCategory <- properties$selected[properties$input == "input$category"]
-        if (input$category != mySelectedCategory) {
+        dontUseProps <- FALSE
+        if (is.null(input$category)) {
+           dontUseProps <- TRUE 
+        } else if (input$category != mySelectedCategory) {
+           dontUseProps <- TRUE
+        }
+
+        if (dontUseProps) {
           mySelectedFactor1 <- levels_factors[1]
           mySelectedFactor2 <- levels_factors[2]
         } else {
@@ -126,7 +144,7 @@ shinyServer(function(input, output, session) {
       updateSelectizeInput(session, "category",
                            choices = c(columns[2:length(columns)]),
                            selected = mySelectedCategory,
-                           options = list(placeholder = 'Choose the metadata to calculate the differential abundance'),
+                           options = list(placeholder = 'Choose metadata to calculate differential abundance'),
                            server = T)
       
       
