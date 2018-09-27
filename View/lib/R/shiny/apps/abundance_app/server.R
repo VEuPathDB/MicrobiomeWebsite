@@ -4,6 +4,7 @@ library(ggplot2)
 source("../../lib/wdkDataset.R")
 library(data.table)
 library(httr)
+library(gtools)
 source("functions.R")
 source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/facet_even.R")
@@ -197,7 +198,9 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
-        }
+        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
+          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
+        } 
 
         chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
           geom_bar(stat="identity", position="stack", color="black")+
@@ -291,6 +294,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
+        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
+          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
         }
  
         chart<-ggplot(dt_metadata, aes_string(x=taxon_level, y="Abundance", fill=col_renamed))+
@@ -467,6 +472,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(metadata_as_column[[col_renamed]])) {
           metadata_as_column[[col_renamed]] <- rcut_number(metadata_as_column[[col_renamed]])
+        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
+          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
         }
 
         # to plot we don't show samples with 0 abundance

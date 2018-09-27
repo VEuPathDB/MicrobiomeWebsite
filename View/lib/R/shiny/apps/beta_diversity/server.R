@@ -5,6 +5,7 @@ source("../../lib/wdkDataset.R")
 library(data.table)
 library(phyloseq)
 library(httr)
+library(gtools)
 source("../../lib/ebrc_functions.R")
 source("../common/ggplot_ext/eupath_default.R")
 source("../common/tooltip/tooltip.R")
@@ -184,7 +185,11 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         
         merged<-merge(sample_details, ps_data, by="SampleName")
         colnames(merged)<-c("SampleName", "colorCategory", colnames(ps_data)[1:(length(ps_data)-1)])
-        
+       
+        if (is.character(merged$colorCategory) & grepl("\\(|\\[|\\]|\\)",merged$colorCategory)) {
+          merged$colorCategory <- factor(merged$colorCategory, levels=mixedsort(levels(as.factor(merged$colorCategory))))
+        }
+ 
         chart<-ggplot(merged, aes(Axis.1, Axis.2))+
           theme_eupath_default(
             legend.title.align=0.4,
@@ -207,6 +212,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(merged$categoryShape)) {
           merged$categoryShape <- rcut_number(merged$categoryShape)
+        } else if (is.character(merged$categoryShape) & grepl("\\(|\\[|\\]|\\)",merged$categoryShape)) {
+          merged$categoryShape <- factor(merged$categoryShape, levels=mixedsort(levels(as.factor(merged$categoryShape))))
         } 
         
         chart<-ggplot(merged, aes(Axis.1, Axis.2))+
@@ -226,6 +233,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$categoryColor)) {
             merged$categoryColor <- rcut_number(merged$categoryColor)
+          } else if (is.character(merged$categoryColor) & grepl("\\(|\\[|\\]|\\)",merged$categoryColor)) {
+          merged$categoryColor <- factor(merged$categoryColor, levels=mixedsort(levels(as.factor(merged$categoryColor))))
           }
 
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
@@ -245,6 +254,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$shapeCategory)) {
             merged$shapeCategory <- rcut_number(merged$shapeCategory)
+          } else if (is.character(merged$shapeCategory) & grepl("\\(|\\[|\\]|\\)",merged$shapeCategory)) {
+          merged$shapeCategory <- factor(merged$shapeCategory, levels=mixedsort(levels(as.factor(merged$shapeCategory))))
           }
 
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
