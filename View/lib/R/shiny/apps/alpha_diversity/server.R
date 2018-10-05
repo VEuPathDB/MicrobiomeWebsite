@@ -4,6 +4,7 @@ source("../../lib/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(httr)
+library(gtools)
 source("../../lib/ebrc_functions.R")
 source("../common/mbiome/mbiome-reader.R")
 source("../common/ggplot_ext/eupath_default.R")
@@ -352,7 +353,23 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       # richness_merged<-na.omit(richness_merged)
       # data_melted<-melt(richness_merged, id.vars = c("SampleName", category),  measure.vars=measure)
       # print("richness_merged")
-      
+
+      message(head(richness_merged))
+      if (is.character(richness_merged[[category]]) & all(grepl("\\(|\\[|\\]|\\)",richness_merged[[category]]))) {
+        richness_merged[[category]] <- factor(richness_merged[[category]], levels=mixedsort(levels(as.factor(richness_merged[[category]]))))
+      }
+      message(head(richness_merged))
+      if (!is.null(richness_merged[[horizontalCategory]])) {
+        if (is.character(richness_merged[[horizontalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[horizontalCategory]])) {
+          richness_merged[[horizontalCategory]] <- factor(richness_merged[[horizontalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[horizontalCategory]]))))
+        }
+      }
+      if (!is.null(richness_merged[[verticalCategory]])) {
+        if (is.character(richness_merged[[verticalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[verticalCategory]])) {
+          richness_merged[[verticalCategory]] <- factor(richness_merged[[verticalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[verticalCategory]]))))
+        }
+      }
+
       if(identical(class(richness_merged[[category]]),"numeric")){
         #if xaxis is numeric, only bin second facet to start
         if (is.numeric(richness_merged[[horizontalCategory]])) {
@@ -364,7 +381,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           richness_merged[[category]] <- rcut_number(richness_merged[[category]])
           if (is.numeric(richness_merged[[verticalCategory]])) {
           richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
-        }
+          }
         }   
 
         if(!condVertical){
