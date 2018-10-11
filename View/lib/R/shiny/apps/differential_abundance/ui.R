@@ -5,6 +5,10 @@ shinyUI(
   fluidPage(
     useShinyjs(),
     includeCSS("www/style.css"),
+    tags$style(type="text/css",
+              ".shiny-output-error { visibility: hidden; }",
+              ".shiny-output-error:before { visibility: hidden; }"
+    ),
     # Loading message
     div(id = "loading-content",
         h5("Preparing the graphical representation..."),
@@ -31,7 +35,7 @@ shinyUI(
                   "category",
                   choices = NULL,
                   label = "Design Factor",
-                  options = list(placeholder = 'Loading...'),
+                  options = list(placeholder = 'Choose metadata to calculate differential abundance'),
                   width = "100%"
                 )
               ),
@@ -62,7 +66,7 @@ shinyUI(
                            "factor1",
                            choices = NULL,
                            label = "Factor 1",
-                           options = list(placeholder = 'Loading...'),
+                           options = list(placeholder = 'First choose Design Factor'),
                            width = "100%"
                          )
                   ),
@@ -74,7 +78,7 @@ shinyUI(
                            "factor2",
                            choices = NULL,
                            label = "Factor 2",
-                           options = list(placeholder = 'Loading...'),
+                           options = list(placeholder = 'First choose Design Factor'),
                            width = "100%"
                          )
                   )

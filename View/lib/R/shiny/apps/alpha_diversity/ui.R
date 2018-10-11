@@ -12,6 +12,10 @@ shinyUI(
 	  useShinyjs(),
 	  includeCSS("../common/tooltip/tooltip.css"),
 	  includeCSS("www/style.css"),
+          tags$style(type="text/css",
+              ".shiny-output-error { visibility: hidden; }",
+              ".shiny-output-error:before { visibility: hidden; }"
+          ),
 	  # Loading message
 	  div(id = "loading-content",
 	      h5("Preparing graphical representation..."),

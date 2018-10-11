@@ -13,6 +13,10 @@ shinyUI(
     includeCSS("www/style.css"),
     includeCSS("../common/tooltip/tooltip.css"),
     includeScript("www/script.js"),
+    tags$style(type="text/css",
+              ".shiny-output-error { visibility: hidden; }",
+              ".shiny-output-error:before { visibility: hidden; }"
+    ),
     # extendShinyjs(text = jsCode),
     # Loading message
     div(id = "loading-content",
@@ -65,6 +69,30 @@ shinyUI(
        tabsetPanel(
          id = "tabs",
          tabPanel(
+           title = "Top Taxa Comparison",
+           value = "byTopOTU",
+           hidden(
+             div(id="topTabLoading", style="text-align: center;",
+                 h5("Formatting plot..."),
+                 img(src = "spinner.gif", id = "loading-spinner")
+             )),
+           div(
+             id="topTabContent",
+             fluidRow(
+               column(12,
+                      # div(style = "position:relative",
+                      uiOutput("chartByTopOTU"),
+                      uiOutput("hoverByTopOTU")
+                      # )
+               )),
+             fluidRow(
+               column(12,
+                      DT::dataTableOutput("by_top_otu_datatable")
+               )
+             )
+           )
+         ),# end tabPabel byTopOTU
+         tabPanel(
            id="firstTab",
            title = "Overview",
            value = "bySample",
@@ -89,30 +117,6 @@ shinyUI(
                ))
            )
          ), # end tabPanel bySample
-         tabPanel(
-           title = "Top Taxa Comparison",
-           value = "byTopOTU",
-           hidden(
-             div(id="topTabLoading", style="text-align: center;",
-                 h5("Formatting plot..."),
-                 img(src = "spinner.gif", id = "loading-spinner")
-             )),
-           div(
-             id="topTabContent",
-             fluidRow(
-               column(12,
-                      # div(style = "position:relative",
-                      uiOutput("chartByTopOTU"),
-                      uiOutput("hoverByTopOTU")
-                      # )
-               )),
-             fluidRow(
-               column(12,
-                      DT::dataTableOutput("by_top_otu_datatable")
-               )
-             )
-           )
-         ),# end tabPabel byTopOTU
          tabPanel(
            title = "Single Taxon",
            value = "byOTU",
