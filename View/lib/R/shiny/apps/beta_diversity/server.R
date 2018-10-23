@@ -85,12 +85,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       updateSelectizeInput(session, "category",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedCategory,
-                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           options = list(placeholder = 'Select sample details'))#,
                            #server = TRUE)
       updateSelectizeInput(session, "categoryShape",
                            choices = c(NO_METADATA_SELECTED, filtered_categories),
                            selected = mySelectedShape,
-                           options = list(maxOptions = 10, placeholder = 'Select sample details'))#,
+                           options = list(placeholder = 'Select sample details'))#,
                            #server = TRUE)
     }
     
