@@ -54,8 +54,9 @@ OTUClass <- R6Class("OTUClass",
         }
         # end of workaroud for perfomance
         colnames(private$summarized_otu)<-c("SampleName", selected_levels, "Abundance")
+        sample_num <- length(private$sample_names)
 
-        private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
+        private$summarized_means<-private$summarized_otu[,list(Abundance=sum(Abundance)/sample_num), by=taxonomy_level]
 
         setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,1))
 
