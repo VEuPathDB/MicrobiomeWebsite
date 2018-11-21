@@ -13,7 +13,7 @@ OTUClass <- R6Class("OTUClass",
       otu_dt = NULL,
       OTHER_TEXT = "Other",
       initialize = function(otu_dt, aggregate_by = "Phylum", use_relative_abundance=T) {
-        self$otu_dt <- otu_dt
+        self$otu_dt <- as.data.table(complete(otu_dt, Sample, nesting(Taxon, Kingdom, Phylum, Class, Order, Family, Genus, Species), fill = list(RelativeAbundance=0,AbsoluteAbundance=0)))
         private$sample_names <- unique(self$otu_dt$Sample)
         self$reshape(aggregate_by, use_relative_abundance)
 
