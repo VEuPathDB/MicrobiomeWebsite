@@ -472,8 +472,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(metadata_as_column[[col_renamed]])) {
           metadata_as_column[[col_renamed]] <- rcut_number(metadata_as_column[[col_renamed]])
-        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
-          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
+        } else if (is.character(metadata_as_column[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",metadata_as_column[[col_renamed]])) {
+          metadata_as_column[[col_renamed]] <- factor(metadata_as_column[[col_renamed]], levels=mixedsort(levels(as.factor(metadata_as_column[[col_renamed]]))))
         }
 
         # to plot we don't show samples with 0 abundance
