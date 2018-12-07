@@ -72,48 +72,7 @@ shinyUI(
 	    id = "tabs",
 	    tabPanel(
 	      id="firstTab",
-	      title = "Alpha Diversity Overview",
 	      value = "firstTab",
-	      hidden(
-          div(id="chartLoading", style="text-align: center;",
-              h5("Calculating the alpha diversity. This could take a while..."),
-              img(src = "spinner.gif", id = "loading-spinner")
-          )
-        ),
-	      div(
-	        id="allSamplesArea",
-	        # fluidRow(
-	        #   column(4,
-	        #          selectInput("orderBy", "Order by",
-	        #                      c(
-	        #                        "Sample Name" = "SampleName",
-	        #                        list(`Alpha Diversity` = c("Decreasing", "Increasing")
-	        #                             )
-	        #                        # "Alpha Div. Decreasing"="decreasing",
-	        #                        # "Alpha Div. Increasing" = "increasing",
-	        #                        # "ACE" = "ACE",
-	        #                        # "Fisher"="Fisher"
-	        #                      ))
-	        #   )
-	        # ),
-	        fluidRow(
-	          column(12,
-	                 # div(style = "position:relative",
-	                 uiOutput("allSamplesChart"),
-	                 uiOutput("uiHoverAllSamples")
-	                 # )
-	          )
-	        ),
-	        fluidRow(
-	          column(12,
-	                 dataTableOutput("allSamplesDt")
-	          )
-	        )
-	      )
-	    ), # end tabPanel bySample
-	    tabPanel(
-	      id="secondTab",
-	      value = "secondTab",
 	      title = "Explore Sample Details",
 	      fluidRow(
 	        column(4,
@@ -174,7 +133,48 @@ shinyUI(
 	            )
 	          )
 	       )
-	    ) # end tabPanel secondTab
+	    ), # end tabPanel firstTab
+	    tabPanel(
+	      id="secondTab",
+	      title = "Alpha Diversity Overview",
+	      value = "secondTab",
+	      hidden(
+          div(id="chartLoading", style="text-align: center;",
+              h5("Calculating the alpha diversity. This could take a while..."),
+              img(src = "spinner.gif", id = "loading-spinner")
+          )
+        ),
+	      div(
+	        id="allSamplesArea",
+	        # fluidRow(
+	        #   column(4,
+	        #          selectInput("orderBy", "Order by",
+	        #                      c(
+	        #                        "Sample Name" = "SampleName",
+	        #                        list(`Alpha Diversity` = c("Decreasing", "Increasing")
+	        #                             )
+	        #                        # "Alpha Div. Decreasing"="decreasing",
+	        #                        # "Alpha Div. Increasing" = "increasing",
+	        #                        # "ACE" = "ACE",
+	        #                        # "Fisher"="Fisher"
+	        #                      ))
+	        #   )
+	        # ),
+	        fluidRow(
+	          column(12,
+	                 # div(style = "position:relative",
+	                 uiOutput("allSamplesChart"),
+	                 uiOutput("uiHoverAllSamples")
+	                 # )
+	          )
+	        ),
+	        fluidRow(
+	          column(12,
+	                 dataTableOutput("allSamplesDt")
+	          )
+	        )
+	      )
+	    ) # end tabPanel bySample
 	  )
 	  # fluidRow(
 	  #   column(8,

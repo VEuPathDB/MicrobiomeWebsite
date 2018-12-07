@@ -13,7 +13,7 @@ OTUClass <- R6Class("OTUClass",
       otu_dt = NULL,
       OTHER_TEXT = "Other",
       initialize = function(otu_dt, aggregate_by = "Phylum", use_relative_abundance=T) {
-        self$otu_dt <- otu_dt
+        self$otu_dt <- as.data.table(complete(otu_dt, Sample, nesting(Taxon, Kingdom, Phylum, Class, Order, Family, Genus, Species), fill = list(RelativeAbundance=0,AbsoluteAbundance=0)))
         private$sample_names <- unique(self$otu_dt$Sample)
         self$reshape(aggregate_by, use_relative_abundance)
 
@@ -57,8 +57,7 @@ OTUClass <- R6Class("OTUClass",
 
         private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
 
-        setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,1))
-
+        setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
         private$ordered_all_otu <- private$summarized_means[[taxonomy_level]]
 
         self

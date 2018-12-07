@@ -1,5 +1,6 @@
 library(R6)
 library(data.table)
+library(tidyr)
 
 source("../common/mbiome/mbiome-data.R")
 source("../common/mbiome/mbiome-utils.R")
