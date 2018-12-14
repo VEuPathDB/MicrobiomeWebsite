@@ -16,13 +16,13 @@
 -->
 
 <record>
-  <attribute name="headline">MicrobiomeDB 9 Released</attribute>
+  <attribute name="headline">MicrobiomeDB 10 Released</attribute>
   <attribute name="date">15 Dec 2018 13:00</attribute>
-  <attribute name="tag">microbiome_9_release</attribute>
+  <attribute name="tag">microbiome_10_release</attribute>
   <attribute name="category">release</attribute>
   <attribute name="item">
     <![CDATA[
-      <p><strong>We are pleased to announce the release of MicrobiomeDB 9</strong></p>
+      <p><strong>We are pleased to announce the release of MicrobiomeDB 10</strong></p>
       <section>
         <h3><b>New data in this release</b></h3>
         <ul>
