@@ -11,7 +11,7 @@ shinyUI(
   fluidPage(
     useShinyjs(),
     includeCSS("www/style.css"),
-    includeCSS("../common/tooltip/tooltip.css"),
+    includeCSS("../../lib/tooltip/tooltip.css"),
     includeScript("www/script.js"),
     tags$style(type="text/css",
               ".shiny-output-error { visibility: hidden; }",

@@ -2,10 +2,10 @@ library(R6)
 library(data.table)
 library(tidyr)
 
-source("../common/mbiome/mbiome-data.R")
-source("../common/mbiome/mbiome-utils.R")
-source("../common/mbiome/otu-table.R")
-source("../common/mbiome/sample-table.R")
+source("../../lib/mbiome/mbiome-data.R")
+source("../../lib/mbiome/mbiome-utils.R")
+source("../../lib/mbiome/otu-table.R")
+source("../../lib/mbiome/sample-table.R")
 
 #' Function to read input files for MicrobiomeDB and returns a MicrobiomeData
 #'   object.

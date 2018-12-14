@@ -7,11 +7,11 @@ library(httr)
 library(gtools)
 source("functions.R")
 source("../../lib/ebrc_functions.R")
-source("../common/ggplot_ext/facet_even.R")
-source("../common/ggplot_ext/eupath_default.R")
-source("../common/tooltip/abundance_tt.R")
-source("../common/mbiome/mbiome-reader.R")
-source("../common/config.R")
+source("../../lib/ggplot_ext/facet_even.R")
+source("../../lib/ggplot_ext/eupath_default.R")
+source("../../lib/tooltip/abundance_tt.R")
+source("../../lib/mbiome/mbiome-reader.R")
+source("../../lib/config.R")
 
 
 shinyServer(function(input, output, session) {

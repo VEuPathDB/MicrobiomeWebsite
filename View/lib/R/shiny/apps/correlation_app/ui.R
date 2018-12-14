@@ -9,7 +9,7 @@ shinyUI(
     tags$head(tags$style(HTML("div.checkbox {margin-top: 0px; margin-bottom: 0px;}"))),
     useShinyjs(),
     includeCSS("www/style.css"),
-    includeCSS("../common/tooltip/tooltip.css"),
+    includeCSS("../../lib/tooltip/tooltip.css"),
     tags$style(type="text/css",
               ".shiny-output-error { visibility: hidden; }",
               ".shiny-output-error:before { visibility: hidden; }"
