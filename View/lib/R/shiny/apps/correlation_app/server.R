@@ -4,11 +4,11 @@ library(data.table)
 library(ggplot2)
 library(httr)
 source("../../lib/wdkDataset.R")
-source("../common/ggplot_ext/eupath_default.R")
-source("../common/tooltip/abundance_tt.R")
-source("../common/mbiome/mbiome-reader.R")
-source("../common/mbiome/mbiome-stats.R")
-source("../common/config.R")
+source("../../lib/ggplot_ext/eupath_default.R")
+source("../../lib/tooltip/abundance_tt.R")
+source("../../lib/mbiome/mbiome-reader.R")
+source("../../lib/mbiome/mbiome-stats.R")
+source("../../lib/config.R")
 
 shinyServer(function(input, output, session) {
   mstudy_obj <- NULL

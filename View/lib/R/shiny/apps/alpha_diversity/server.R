@@ -6,10 +6,10 @@ library(data.table)
 library(httr)
 library(gtools)
 source("../../lib/ebrc_functions.R")
-source("../common/mbiome/mbiome-reader.R")
-source("../common/ggplot_ext/eupath_default.R")
-source("../common/tooltip/tooltip.R")
-source("../common/config.R")
+source("../../lib/mbiome/mbiome-reader.R")
+source("../../lib/ggplot_ext/eupath_default.R")
+source("../../lib/tooltip/tooltip.R")
+source("../../lib/config.R")
 
 shinyServer(function(input, output, session) {
   

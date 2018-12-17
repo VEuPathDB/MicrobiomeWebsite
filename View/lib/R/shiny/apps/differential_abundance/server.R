@@ -6,9 +6,9 @@ library(data.table)
 library(DESeq2)
 library(httr)
 source("../../lib/ebrc_functions.R")
-source("../common/ggplot_ext/eupath_default.R")
-source("../common/ggplot_ext/eupath_functions.R")
-source("../common/config.R")
+source("../../lib/ggplot_ext/eupath_default.R")
+source("../../lib/ggplot_ext/eupath_functions.R")
+source("../../lib/config.R")
 source("functions.R")
 
 shinyServer(function(input, output, session) {
