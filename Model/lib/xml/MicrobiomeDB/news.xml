@@ -28,15 +28,12 @@
         <ul>
         <li>The ENTiCE longitudinal study includes stool and rectal swab microbiome data from over 1000 children from The Gambia, Bangladesh, Kenya and Mali.
         <li>The CAMP case control study contains stool microbiome data from 150 dogs with confirmed enteric parasite infections, and 175 healthy dogs.
-        <li>The Cutaneous Leishmaniasis study contains mainly skin microbiome data from human clincal Leishmania braziliensis cases from Bahia, Brazil (cases and controls), as well as mice experimentally infected with L. braziliensis (longitudinal) .
+        <li>The Human Cutaneous Leishmaniasis (V1V3) study is a case control study consisting of skin swabs from clincal cases seen at the ______ in Bahia, Brazil.
+        <li>The Experimental Cutaneous Leishmaniasis (V4) study is a longitudinal study in which stool and skin swabs were collected from mice experimentally infected with Leishmania braziliensis strain.
         </ul>
       </section>
       <section>
-        <h3><b>New features in this release</b></h3>
-        <ul>
-        <li>The entire site has been redesigned to showcase datasets, example queries and data visualization apps.
-        <li>In previous releases, all data was loaded from .biom files.  Advances in our data loading workflow allowed us to load raw fastq sequence files for all studies.
-        </ul>
+        <h3><b>There are no features in this release</b></h3>
       </section>
       <section>
         <aside>
@@ -65,7 +62,6 @@
         <h3><b>New features in this release</b></h3>
         <ul>
         <li>The entire site has been redesigned to showcase datasets, example queries and data visualization apps.
-        <li>In previous releases, all data was loaded from .biom files.  Advances in our data loading workflow allowed us to load raw fastq sequence files for all studies.
         </ul>
       </section>
       <section>
