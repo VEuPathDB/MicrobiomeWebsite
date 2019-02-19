@@ -1,12 +1,12 @@
 # Declaring the packages
 library(shiny)
 library(ggplot2)
-source("../../lib/wdkDataset.R")
+source("../../functions/wdkDataset.R")
 library(data.table)
 library(httr)
 library(gtools)
 source("functions.R")
-source("../../lib/ebrc_functions.R")
+source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/facet_even.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/tooltip/abundance_tt.R")
@@ -198,7 +198,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
-        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
+        } else if (is.character(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
         } 
 
@@ -294,7 +294,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
-        } else if (is.character(dt_metadata[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",dt_metadata[[col_renamed]])) {
+        } else if (is.character(dt_metadata[[col_renamed]])) {
           dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
         }
  
@@ -472,7 +472,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(metadata_as_column[[col_renamed]])) {
           metadata_as_column[[col_renamed]] <- rcut_number(metadata_as_column[[col_renamed]])
-        } else if (is.character(metadata_as_column[[col_renamed]]) & grepl("\\(|\\[|\\]|\\)",metadata_as_column[[col_renamed]])) {
+        } else if (is.character(metadata_as_column[[col_renamed]])) {
           metadata_as_column[[col_renamed]] <- factor(metadata_as_column[[col_renamed]], levels=mixedsort(levels(as.factor(metadata_as_column[[col_renamed]]))))
         }
 
