@@ -1,11 +1,11 @@
 library(shiny)
 library(ggplot2)
-source("../../lib/wdkDataset.R")
+source("../../functions/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(httr)
 library(gtools)
-source("../../lib/ebrc_functions.R")
+source("../../functions/ebrc_functions.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/tooltip/tooltip.R")
@@ -355,17 +355,17 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       # print("richness_merged")
 
       message(head(richness_merged))
-      if (is.character(richness_merged[[category]]) & all(grepl("\\(|\\[|\\]|\\)",richness_merged[[category]]))) {
+      if (is.character(richness_merged[[category]])) {
         richness_merged[[category]] <- factor(richness_merged[[category]], levels=mixedsort(levels(as.factor(richness_merged[[category]]))))
       }
       message(head(richness_merged))
       if (!is.null(richness_merged[[horizontalCategory]])) {
-        if (is.character(richness_merged[[horizontalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[horizontalCategory]])) {
+        if (is.character(richness_merged[[horizontalCategory]])) {
           richness_merged[[horizontalCategory]] <- factor(richness_merged[[horizontalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[horizontalCategory]]))))
         }
       }
       if (!is.null(richness_merged[[verticalCategory]])) {
-        if (is.character(richness_merged[[verticalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[verticalCategory]])) {
+        if (is.character(richness_merged[[verticalCategory]])) {
           richness_merged[[verticalCategory]] <- factor(richness_merged[[verticalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[verticalCategory]]))))
         }
       }
