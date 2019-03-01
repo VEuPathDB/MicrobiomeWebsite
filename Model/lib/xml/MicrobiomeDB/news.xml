@@ -16,6 +16,35 @@
 -->
 
 <record>
+  <attribute name="headline">MicrobiomeDB 11 Released</attribute>
+  <attribute name="date">28 Feb 2019 13:00</attribute>
+  <attribute name="tag">microbiome_11_release</attribute>
+  <attribute name="category">release</attribute>
+  <attribute name="item">
+    <![CDATA[
+      <p><strong>We are pleased to announce the release of MicrobiomeDB 11</strong></p>
+      <section>
+        <h3><b>New data in this release</b></h3>
+        <ul>
+        <li>The ENTiCE study includes stool, rectal swab, and GI biopsy microbiome data from 42 dogs undergoing treatment for Canine Chronic Enteropathy.
+        <li>The CAMP study is a case control design that includes stool microbiome data from 155 dogs with confirmed enteric parasite infections, and 115 healthy dogs.
+        <li>The Human Cutaneous Leishmaniasis study is a case control study consisting of skin swabs from clincal cases of cutaneous leishmaniasis caused by Leishmania braziliensis, seen at a field clinic in Corte de Pedra, Bahia, Brazil.
+        <li>The Experimental Cutaneous Leishmaniasis study is a longitudinal study in which stool and skin swabs were collected from mice experimentally infected with Leishmania major.
+        </ul>
+      </section>
+      <section>
+        <h3><b>There are no features in this release</b></h3>
+      </section>
+      <section>
+        <aside>
+           Note: Our bimonthly database releases incorporate new data and correct old data when necessary. Changes in annotation and new experimental data may slightly alter your search results by increasing or decreasing the number of hits. When search parameters change with a new release, we invalidate (Ø) the search and ask you to rerun it. When sample IDs are updated or removed, we map the old IDs to the new ones, remove the old IDs from your Basket, and leave your Favorites page alone. 
+        </aside>
+      </section>
+    ]]>
+  </attribute>
+</record>
+
+<record>
   <attribute name="headline">MicrobiomeDB 10 Released</attribute>
   <attribute name="date">15 Dec 2018 13:00</attribute>
   <attribute name="tag">microbiome_10_release</attribute>
@@ -33,7 +62,6 @@
         <h3><b>New features in this release</b></h3>
         <ul>
         <li>The entire site has been redesigned to showcase datasets, example queries and data visualization apps.
-        <li>In previous releases, all data was loaded from .biom files.  Advances in our data loading workflow allowed us to load raw fastq sequence files for all studies.
         </ul>
       </section>
       <section>

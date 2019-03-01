@@ -1,12 +1,12 @@
 # Declaring the packages
 library(shiny)
 library(ggplot2)
-source("../../lib/wdkDataset.R")
+source("../../functions/wdkDataset.R")
 library(data.table)
 library(phyloseq)
 library(httr)
 library(gtools)
-source("../../lib/ebrc_functions.R")
+source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/tooltip/tooltip.R")
 source("../../lib/mbiome/mbiome-reader.R")
@@ -186,7 +186,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         merged<-merge(sample_details, ps_data, by="SampleName")
         colnames(merged)<-c("SampleName", "colorCategory", colnames(ps_data)[1:(length(ps_data)-1)])
        
-        if (is.character(merged$colorCategory) & grepl("\\(|\\[|\\]|\\)",merged$colorCategory)) {
+        if (is.character(merged$colorCategory)) {
           merged$colorCategory <- factor(merged$colorCategory, levels=mixedsort(levels(as.factor(merged$colorCategory))))
         }
  
@@ -211,8 +211,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         #bin shape col if numeric
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(merged$categoryShape)) {
-          merged$categoryShape <- rcut_number(merged$categoryShape)
-        } else if (is.character(merged$categoryShape) & grepl("\\(|\\[|\\]|\\)",merged$categoryShape)) {
+	  if (uniqueN(merged$categoryShape) > 10) {
+            merged$categoryShape <- rcut_number(merged$categoryShape)
+          } else {
+	    merged$categoryShape <- as.factor(merged$categoryShape)
+	  }
+        } else if (is.character(merged$categoryShape)) {
           merged$categoryShape <- factor(merged$categoryShape, levels=mixedsort(levels(as.factor(merged$categoryShape))))
         } 
         
@@ -230,10 +234,13 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           colnames(merged)<-c("SampleName", "categoryColor", colnames(ps_data)[1:(length(ps_data)-1)])
           
           #bin shape col if numeric
-          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$categoryColor)) {
-            merged$categoryColor <- rcut_number(merged$categoryColor)
-          } else if (is.character(merged$categoryColor) & grepl("\\(|\\[|\\]|\\)",merged$categoryColor)) {
+	    if (uniqueN(merged$categoryColor) > 10) {
+              merged$categoryColor <- rcut_number(merged$categoryColor)
+	    } else {
+	      merged$categoryColor <- as.factor(merged$categoryColor)
+	    }
+          } else if (is.character(merged$categoryColor)) {
           merged$categoryColor <- factor(merged$categoryColor, levels=mixedsort(levels(as.factor(merged$categoryColor))))
           }
 
@@ -253,8 +260,12 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           #bin shape col if numeric
           #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$shapeCategory)) {
-            merged$shapeCategory <- rcut_number(merged$shapeCategory)
-          } else if (is.character(merged$shapeCategory) & grepl("\\(|\\[|\\]|\\)",merged$shapeCategory)) {
+	    if (uniqueN(merged$shapeCategory) > 10) {
+              merged$shapeCategory <- rcut_number(merged$shapeCategory)
+	    } else {
+	      merged$shapeCategory <- as.factor(merged$shapeCategory)
+	    }
+          } else if (is.character(merged$shapeCategory)) {
           merged$shapeCategory <- factor(merged$shapeCategory, levels=mixedsort(levels(as.factor(merged$shapeCategory))))
           }
 

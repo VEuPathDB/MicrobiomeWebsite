@@ -1,11 +1,11 @@
 library(shiny)
 library(ggplot2)
-source("../../lib/wdkDataset.R")
+source("../../functions/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(DESeq2)
 library(httr)
-source("../../lib/ebrc_functions.R")
+source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/ggplot_ext/eupath_functions.R")
 source("../../lib/config.R")
@@ -97,7 +97,11 @@ shinyServer(function(input, output, session) {
       for(i in 1:length(columns)){
         #bin numbers into two groups to compare
         if (is.numeric(df_sample.formatted[[hash_sample_names[[columns[i]]]]])) {
-          df_sample.formatted[[hash_sample_names[[columns[i]]]]] <- rcut_number(df_sample.formatted[[hash_sample_names[[columns[i]]]]], 2)
+	  if (uniqueN(df_sample.formatted[[hash_sample_names[[columns[i]]]]]) > 10) {
+            df_sample.formatted[[hash_sample_names[[columns[i]]]]] <- rcut_number(df_sample.formatted[[hash_sample_names[[columns[i]]]]], 2)
+	  } else {
+	    df_sample.formatted[[hash_sample_names[[columns[i]]]]] <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])
+	  }
         }
 
         unique_factors <- as.factor(df_sample.formatted[[hash_sample_names[[columns[i]]]]])

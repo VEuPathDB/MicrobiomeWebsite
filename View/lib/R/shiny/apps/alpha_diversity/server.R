@@ -1,11 +1,11 @@
 library(shiny)
 library(ggplot2)
-source("../../lib/wdkDataset.R")
+source("../../functions/wdkDataset.R")
 library(phyloseq)
 library(data.table)
 library(httr)
 library(gtools)
-source("../../lib/ebrc_functions.R")
+source("../../functions/ebrc_functions.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/tooltip/tooltip.R")
@@ -355,17 +355,17 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       # print("richness_merged")
 
       message(head(richness_merged))
-      if (is.character(richness_merged[[category]]) & all(grepl("\\(|\\[|\\]|\\)",richness_merged[[category]]))) {
+      if (is.character(richness_merged[[category]])) {
         richness_merged[[category]] <- factor(richness_merged[[category]], levels=mixedsort(levels(as.factor(richness_merged[[category]]))))
       }
       message(head(richness_merged))
       if (!is.null(richness_merged[[horizontalCategory]])) {
-        if (is.character(richness_merged[[horizontalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[horizontalCategory]])) {
+        if (is.character(richness_merged[[horizontalCategory]])) {
           richness_merged[[horizontalCategory]] <- factor(richness_merged[[horizontalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[horizontalCategory]]))))
         }
       }
       if (!is.null(richness_merged[[verticalCategory]])) {
-        if (is.character(richness_merged[[verticalCategory]]) & grepl("\\(|\\[|\\]|\\)",richness_merged[[verticalCategory]])) {
+        if (is.character(richness_merged[[verticalCategory]])) {
           richness_merged[[verticalCategory]] <- factor(richness_merged[[verticalCategory]], levels=mixedsort(levels(as.factor(richness_merged[[verticalCategory]]))))
         }
       }
@@ -373,14 +373,26 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       if(identical(class(richness_merged[[category]]),"numeric")){
         #if xaxis is numeric, only bin second facet to start
         if (is.numeric(richness_merged[[horizontalCategory]])) {
-          richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
-        }
+          if (uniqueN(richness_merged[[horizontalCategory]]) > 10) {
+	    richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+          } else {
+	    richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
+	  }
+	} 
 
         #if box plot also bin xaxis and facet1
         if (!identical(plotRadio, "dotplot")) {
-          richness_merged[[category]] <- rcut_number(richness_merged[[category]])
+	  if (uniqueN(richness_merged[[category]]) > 10) {
+            richness_merged[[category]] <- rcut_number(richness_merged[[category]])
+	  } else {
+	    richness_merged[[category]] <- as.factor(richness_merged[[category]])
+	  }
           if (is.numeric(richness_merged[[verticalCategory]])) {
-          richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+	    if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
+              richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+	    } else {
+	      richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
+	    }
           }
         }   
 
@@ -434,10 +446,19 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }else{
         #bin numeric facets for all cases where xaxis is not numeric
         if (is.numeric(richness_merged[[horizontalCategory]])) {
-          richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+          if (uniqueN(richness_merged[[horizontalCategory]]) > 10) {
+            richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+	  } else {
+	    richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
+	  }
         }
+
         if (is.numeric(richness_merged[[verticalCategory]])) {
-          richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+	  if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
+            richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
+	  } else {
+	    richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
+	  }
         } 
  
         chart<-ggplot(richness_merged, aes_string(sprintf("`%s`",category), measure))+
