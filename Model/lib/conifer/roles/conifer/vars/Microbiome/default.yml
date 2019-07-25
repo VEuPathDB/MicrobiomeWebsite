@@ -10,3 +10,15 @@ modelprop:
   TWITTER_WIDGET_ID: 788427253331951616
   VIMEO_URL: https://vimeo.com/album/5598563
 
+modelconfig_oauthUrl: https://eupathdb.org/oauth
+modelconfig_authenticationMethod: oauth2
+modelconfig_oauthClientId: apiComponentSite
+modelconfig_oauthClientSecret: "{{ lookup('csvfile',
+    'apicomponentsite
+    file=/usr/local/tomcat_instances/shared/.apidb_oauth_creds
+    col=1
+    delimiter=:') | trim
+  }}"
+modelconfig_changePasswordUrl: "{{ modelconfig_oauthUrl }}/assets/eupathdb-changePassword.html?returnUrl={{ '{{' }}returnUrl}}&amp;suggestedUsername={{ '{{' }}suggestedUsername}}"
+
+
