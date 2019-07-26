@@ -155,14 +155,17 @@ OTUClass <- R6Class("OTUClass",
           tmp<-self$reshape(taxonomy_level)
         }
 
+	summarized_otu <- private$summarized_otu
+	last_taxonomy <- private$last_taxonomy
+
         if(is.null(filter_samples)){
-          dcast(data = private$summarized_otu, fun.aggregate = "sum",
-                formula = as.formula(paste0("SampleName~",private$last_taxonomy)),
+          dcast(data = summarized_otu, fun.aggregate = sum,
+                formula = as.formula(paste0("SampleName~", last_taxonomy)),
                 value.var = "Abundance", fill=0)
         }else{
-          dcast(data = subset(private$summarized_otu, SampleName != filter_samples),
-                formula = as.formula(paste0("SampleName~",private$last_taxonomy)),
-                fun.aggregate = "sum", value.var = "Abundance", fill=0)
+          dcast(data = subset(summarized_otu, SampleName != filter_samples),
+                formula = as.formula(paste0("SampleName~", last_taxonomy)),
+                fun.aggregate = sum, value.var = "Abundance", fill=0)
         }
 
       },

@@ -10,6 +10,8 @@ source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/mbiome/mbiome-stats.R")
 source("../../lib/config.R")
 
+options(shiny.fullstacktrace = TRUE)
+
 shinyServer(function(input, output, session) {
   mstudy_obj <- NULL
   mstats <- NULL
@@ -38,8 +40,12 @@ shinyServer(function(input, output, session) {
       propUrl <<- getPropertiesUrl(session)
       properties <<- try(fread(propUrl))
 
-      if (grepl("Error", properties)) {
-        properties <<- NULL
+      if (length(properties) > 0) {
+        if (grepl("Error", properties)) {
+          properties <<- NULL
+        }
+      } else {
+	properties <<- NULL
       }
     }
   })
