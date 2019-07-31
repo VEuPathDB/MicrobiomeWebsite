@@ -62,8 +62,12 @@ shinyServer(function(input, output, session) {
       propUrl <<- getPropertiesUrl(session)
       properties <<- try(fread(propUrl))
 
-      if (grepl("Error", properties)) {
-        properties <<- NULL
+      if (length(properties) > 0) {
+        if (grepl("Error", properties)) {
+          properties <<- NULL
+        }
+      } else {
+	properties <<- NULL
       }
     }
 
