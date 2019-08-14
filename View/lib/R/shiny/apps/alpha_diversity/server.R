@@ -5,10 +5,10 @@ library(phyloseq)
 library(data.table)
 library(httr)
 library(gtools)
+library(plotly)
 source("../../functions/ebrc_functions.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/ggplot_ext/eupath_default.R")
-source("../../lib/tooltip/tooltip.R")
 source("../../lib/config.R")
 
 shinyServer(function(input, output, session) {
@@ -83,9 +83,9 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       )
       
       if (is.null(properties)) {
-        mySelectedCategory <- NULL
-        mySelectedFacet1 <- NULL
-        mySelectedFacet2 <- NULL
+        mySelectedCategory <- character(0)
+        mySelectedFacet1 <- character(0)
+        mySelectedFacet2 <- character(0)
       } else {
         mySelectedCategory <- properties$selected[properties$input == "input$category"]
         mySelectedFacet1 <- properties$selected[properties$input == "input$categoryFacet1"]
@@ -251,8 +251,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       ggplot_object <<- chart
       ggplot_build_object <<- ggplot_build(chart)
       
-      output$allSamplesWrapper<-renderPlot({
-        ggplot_object
+      output$allSamplesWrapper<-renderPlotly({
+        ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
       })
       
       if(is.null(se)){
@@ -269,8 +269,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       )
       
       if(quantity_samples <= MAX_SAMPLES_NO_RESIZE | identical(plotRadio, "boxplot")){
-        result_to_show<-plotOutput("allSamplesWrapper",
-                                   hover = hoverOpts("plot_hover", delay = 60, delayType = "throttle"),
+        result_to_show<-plotlyOutput("allSamplesWrapper",
                                    width = paste0(WIDTH,"px"),
                                    height = "500px"
         )
@@ -279,8 +278,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         if(h>2500){
           h<-2500
         }
-        result_to_show<-plotOutput("allSamplesWrapper",
-                                   hover = hoverOpts("plot_hover", delay = 60, delayType = "throttle"),
+        result_to_show<-plotlyOutput("allSamplesWrapper",
                                    width = paste0(WIDTH,"px"),
                                    # width = "100%",
                                    height = h
@@ -340,8 +338,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       }else{
         all_columns<-c(category)
       }
-      # print(all_columns)
-      # print(mstudy$get_metadata_as_column("host diet"))
       dt_metadata<-mstudy$get_metadata_as_column(all_columns)
       
       
@@ -443,8 +439,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           output$result_tests <- renderUI(runStatisticalTests(category, measure, chart$data))
         }
         
-        output$byMetadataChartWrapper<-renderPlot({
-          chart
+        output$byMetadataChartWrapper<-renderPlotly({
+          ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
         })
         
       }else{
@@ -503,8 +499,8 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           output$result_tests <- renderUI(runStatisticalTests(category, measure, chart$data))
         }
         
-        output$byMetadataChartWrapper<-renderPlot({
-          chart
+        output$byMetadataChartWrapper<-renderPlotly({
+          ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
         })
       }
       
@@ -516,9 +512,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       
       if(quantity_samples <= maximum_samples_without_resizing | identical(plotRadio, "boxplot") |
          identical("numeric",class(richness_merged[[category]]))){
-        result_to_show<-plotOutput("byMetadataChartWrapper",
-                                  hover = hoverOpts("hoverByMetadata", delay = 60, delayType = "throttle"),
-                                  # width = "100%", height = "500px"
+        result_to_show<-plotlyOutput("byMetadataChartWrapper",
                                   width = paste0(WIDTH,"px"), height = "500px"
         )
       }else{
@@ -526,8 +520,7 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         if(h>2500){
           h<-2500
         }
-        result_to_show<-plotOutput("byMetadataChartWrapper",
-                                   hover = hoverOpts("hoverByMetadata", delay = 60, delayType = "throttle"),
+        result_to_show<-plotlyOutput("byMetadataChartWrapper",
                                    width = paste0(WIDTH,"px"),
                                    height = h
         )
@@ -583,10 +576,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
   }
   
   
-  # category_button <- eventReactive(input$doneButton, {
-  #   input$category
-  # })
-  
   runStatisticalTests <- function(category, measures, gg_data){
     html_formatted<-"<ul class=\"shell-body\"> %s</ul>"
     
@@ -621,100 +610,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     }
     html_formatted
   }
-  
-  
-  hovers <- function(){}
-  
-  output$uiHoverAllSamples <- renderUI({
-    hover <- input$plot_hover
-    
-    isolate(typeRadio<-input$plotTypeRadio)
-    isolate(measure<-input$measure)
-    
-    if (is.null(hover$x) || round(hover$x) <0 || round(hover$y)<0 || is.null(hover$y))
-      return(NULL)
-    
-    tooltip<-NULL
-    if(identical(typeRadio, "dotplot")){
-      measures_with_se <- c("Chao1","ACE")
-      if(measure %in% measures_with_se){
-        columns_to_show<-c("SampleName", "variable", "value", "se")
-        renamed_columns <- c("Sample", "Measure", "Alpha Div.", "Std. Err.")
-        tooltip<-generic_point(hover, ggplot_build_object, ggplot_object$data, WIDTH,
-                                                        -68, 28, 28, columns_to_show, renamed_columns)
-      }else{
-        columns_to_show<-c("SampleName", "variable", "value")
-        renamed_columns <- c("Sample", "Measure", "Alpha Div.")
-
-        tooltip<-generic_point(hover, ggplot_build_object, ggplot_object$data, WIDTH,
-                                 -55, 28, 28, columns_to_show, renamed_columns)
-      }
-    }else{
-      tooltip<-generic_boxplot(hover, ggplot_build_object, WIDTH, 0, 20,20)
-    }
-    
-    tooltip
-  })
-  
-  output$uiHoverByMetadata <- renderUI({
-    hover <- input$hoverByMetadata
-    
-    return(NULL)
-    
-    isolate(typeRadio<-input$plotTypeRadio)
-    isolate(measure<-input$measure)
-    
-    if (is.null(hover$x) || round(hover$x) <0 || round(hover$y)<0 || is.null(hover$y))
-      return(NULL)
-    
-    # hover$panelvar1<-ifelse(is.null(hover$panelvar1), "NA", hover$panelvar1)
-    
-    isolate(category<-input$category)
-    
-    if(identical(typeRadio, "dotplot")){
-      all_columns<-colnames(ggplot_object_mt$data)
-      
-      measures_with_se <- c("Chao1","ACE")
-      names(measures_with_se)<-c("se.chao1","se.ACE")
-      if(hover$panelvar1  %in% measures_with_se){
-        have_measures_se<-measures_with_se %in% measure
-        columns_to_show<-all_columns
-        renamed_columns <- c("Sample", "Measure", category, "Alpha Div.", "Std. Err.")
-        
-        if(length(category)==1){
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                               -80, 28, 28, columns_to_show, renamed_columns)
-        }else if(length(category)==2){
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                                 -94, 28, 28, columns_to_show, renamed_columns)
-        }
-        else{
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                                 -108, 28, 28, columns_to_show, renamed_columns)
-        }
-      }else{
-        columns_to_show<-all_columns[1:(length(all_columns)-1)]
-        renamed_columns <- c("Sample", category, "Measure", "Alpha Div.")
-        
-        if(length(category)==1){
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                                 -66, 28, 28, columns_to_show, renamed_columns)
-        }else if(length(category)==2){
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                                 -80, 28, 28, columns_to_show, renamed_columns)
-        }else{
-          tooltip<-generic_point(hover, ggplot_build_object_mt, ggplot_object_mt$data, WIDTH,
-                                 -94, 28, 28, columns_to_show, renamed_columns)
-        }
-      }
-    }else{
-      # tooltip<-generic_boxplot(hover, ggplot_build_object_mt, WIDTH, 0, 20, 20)
-      tooltip<-NULL
-      # return(tooltip)
-    }
-    return(tooltip)
-    
-  })
   
   # downloads
   downloadButtons <- function(){}

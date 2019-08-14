@@ -5,6 +5,7 @@ library(phyloseq)
 library(data.table)
 library(DESeq2)
 library(httr)
+library(plotly)
 source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/ggplot_ext/eupath_functions.R")
@@ -127,9 +128,9 @@ shinyServer(function(input, output, session) {
       
       if (is.null(properties)) {
         message("column_factors: ", column_factors)
-        mySelectedCategory <- NULL # column_factors
-        mySelectedFactor1 <- NULL #levels_factors[1]
-        mySelectedFactor2 <- NULL #levels_factors[2]
+        mySelectedCategory <- character(0) # column_factors
+        mySelectedFactor1 <- character(0) #levels_factors[1]
+        mySelectedFactor2 <- character(0) #levels_factors[2]
       } else {
         mySelectedCategory <- properties$selected[properties$input == "input$category"]
         dontUseProps <- FALSE
@@ -362,8 +363,6 @@ shinyServer(function(input, output, session) {
           limits_plot<-c(levels(deseq_result[[taxon_level]]),"","")
           
           chart<-ggplot(deseq_result, aes_string(x="log2FoldChange", y=taxon_level, color="Phylum")) +
-            annotate("text", x = 0, y = nrow(deseq_result)+1, size=5, colour = "red", parse=T,
-                     label = sprintf("atop(bold(\"%s - %s vs %s\"))", category_column, factor2, factor1) )+
             xlim(-max_fold_change, max_fold_change)+
             # ylim(0, nrow(deseq_result)+1.5)+
             geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
@@ -382,17 +381,13 @@ shinyServer(function(input, output, session) {
           shinyjs::enable("btnDownloadEPS")
           shinyjs::enable("btnDownloadCSV")
           
-          output$plotWrapper<-renderPlot({
-            chart
+          output$plotWrapper<-renderPlotly({
+            ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
           })
           
-          result_to_show<-plotOutput("plotWrapper", hover = hoverOpts("plot_hover"))
+          result_to_show<-plotlyOutput("plotWrapper")
           
         }else{ 
-          # output$datatableOutput<-renderDataTable(NULL)
-          # output$mainChart<-renderUI(NULL)
-          # ggplot_object<<-NULL
-          # ggplot_build_object<<-NULL
           shinyjs::disable("btnDownloadPNG")
           shinyjs::disable("btnDownloadSVG")
           shinyjs::disable("btnDownloadEPS")
@@ -427,9 +422,6 @@ shinyServer(function(input, output, session) {
       
       df_sample_filter <- SAMPLE[,category_column]
       
-      # print(head(OTU))
-      # print(head(TAX))
-      # print(head(df_sample_filter))
       if(identical(factor2, "Not Factor 1")){
         df_sample_filter[df_sample_filter[,category_column]!=factor1,category_column]<-"Not Factor 1"
       }else if(identical(factor1, "Not Factor 2")){
@@ -481,99 +473,6 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("chartLoading")
     shinyjs::show("chartContent")
     chart
-  })
-  
-  
-  hovers <- function(){}
-  
-  output$hover_info <- renderUI({
-    
-    hover <- input$plot_hover
-    
-    if (is.null(hover$x) || is.null(hover$y) || is.null(ggplot_object))
-      return(NULL)
-    
-    left_pct <-
-      (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-    top_pct <-
-      (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
-    
-    left_px <-
-      hover$range$left + left_pct * (hover$range$right - hover$range$left)
-    top_px <-
-      hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
-    
-    style <-
-      paste0(
-        "position:absolute; background-color: rgba(245, 245, 245, 0.85); z-index:1000;",
-        "left:",
-        left_px + 2,
-        "px; top:",
-        top_px + 2,
-        "px;"
-      )
-    near_points <- nearPoints(ggplot_object$data, hover)
-    if(nrow(near_points)>0){
-      isolate(taxa_level<-input$taxonLevel)
-      isolate(category<-input$category)
-      isolate(factor1<-input$factor1)
-      isolate(factor2<-input$factor2)
-      
-      text_hover<-""
-      if(nrow(near_points) == 1){
-        filtered_taxa <- abundance_taxa[abundance_taxa[,taxa_level] == near_points[1, taxa_level],]
-        filtered_otu <- abundance_otu_relative[rownames(filtered_taxa),]
-        
-        
-        
-        otu_for_plot <- as.data.frame(t(filtered_otu))
-        otu_for_plot$SampleName <- rownames(otu_for_plot)
-        otu_for_plot_filtered<-otu_for_plot[otu_for_plot[,1]>0,]
-        
-        colnames(otu_for_plot_filtered)<-c("Abundance", "SampleName")
-        
-        category_column<-hash_sample_names[[hash_count_samples[[category]]]]
-        df_sample_selected <- df_sample.formatted[,c("SampleName", category_column)]
-        
-        if(identical(factor2, "Not Factor 1")){
-          df_sample_selected[df_sample_selected[,category_column]!=factor1,category_column]<-"Not Factor 1"
-        }else if(identical(factor1, "Not Factor 2")){
-          df_sample_selected[df_sample_selected[,category_column]!=factor2,category_column]<-"Not Factor 2"
-        }else{
-          df_sample_selected <- df_sample_selected[df_sample_selected[,category_column] == factor1 | df_sample_selected[,category_column] == factor2,]
-        }
-        
-        data_merged <- merge(df_sample_selected, otu_for_plot_filtered, by = "SampleName", all.y=F)
-        data_merged[,category_column] <- factor(data_merged[,category_column], levels=c(factor1,factor2))
-        
-        chart<-ggplot(data_merged, aes_string(x=hash_sample_names[[hash_count_samples[[input$category]]]], y="Abundance"))+geom_boxplot()+
-          theme(
-            axis.title = element_text(family = "Palatino", color="black", face="bold", size=16),
-            axis.text.x = element_text(angle = 0, hjust = 0.5),
-            text = element_text(family = "Palatino", size=13, face="bold", color="black"),
-            panel.border = element_rect(colour="black", size=1, fill=NA),
-            strip.text.x = element_text(family = "Palatino", size=13, face="bold", color="black"),
-            strip.background = element_rect(fill="#F3F2F2")
-          )+
-          labs(x=stringi::stri_trans_totitle(hash_count_samples[[category]]), y="Relative Abundance")
-        
-        output$plotHover<-renderPlot(chart)
-        
-        text_hover <- paste0(text_hover, sprintf("<b>%s: </b>", taxa_level), near_points[1, taxa_level],
-                       "<br><b>log2FoldChange: </b>", sprintf("%.3f",near_points[1,"log2FoldChange"]),
-                       "<br><b>pvalue: </b>", sprintf("%0.6g",near_points[1,"pvalue"]) )
-      }else{
-        # for(i in 1:nrow(near_points)){
-        # } 
-      }
-      wellPanel(style = style,
-        HTML(text_hover),
-        plotOutput("plotHover", width = 250, height = 200)
-      )
-    }else{
-      return(NULL)
-    }
-    
   })
   
   

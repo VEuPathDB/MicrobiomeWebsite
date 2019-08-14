@@ -3,14 +3,14 @@ library(shiny)
 library(data.table)
 library(ggplot2)
 library(httr)
+library(plotly)
 source("../../functions/wdkDataset.R")
 source("../../lib/ggplot_ext/eupath_default.R")
-source("../../lib/tooltip/abundance_tt.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/mbiome/mbiome-stats.R")
 source("../../lib/config.R")
 
-options(shiny.fullstacktrace = TRUE)
+#options(shiny.fullstacktrace = TRUE)
 
 shinyServer(function(input, output, session) {
   mstudy_obj <- NULL
@@ -196,31 +196,23 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         ggplot_object<<-chart
         ggplot_build_object<<-ggplot_build(chart)
 
-        output$plotWrapper<-renderPlot({
-          chart
+        output$plotWrapper<-renderPlotly({
+          ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
         })
 
         quantity_samples<-nrow(result)
 
         if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
-          result_to_show<-plotOutput("plotWrapper",
-             hover = hoverOpts("plot_hover", delay = 100, delayType = "throttle"),
-             click = clickOpts("plot_click"),
-             dblclick = dblclickOpts("plot_dblclick"),
+          result_to_show<-plotlyOutput("plotWrapper",
              width = "100%", height = "500px"
            )
         }else{
-          result_to_show<-plotOutput("plotWrapper",
-            hover = hoverOpts("plot_hover", delay = 100, delayType = "throttle"),
-            click = clickOpts("plot_click"), width = "100%",
+          result_to_show<-plotlyOutput("plotWrapper",
             height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE
           )
         }
         cols_to_show<-result[, !"size", with=FALSE]
         output$datatableOutput<-renderDataTable(cols_to_show)
-                                                # options = list(
-                                                #   order = list(list(1, 'desc'))
-                                                # )
       }else{
         output$datatableOutput<-renderDataTable(NULL)
         result_to_show<-h5(class="alert alert-warning", "There is no correlation with the selected parameters.")
@@ -232,53 +224,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
     shinyjs::show("divContent")
     result_to_show
-  })
-
-  hovers <- function(){}
-  
-  output$hover_info <- renderUI({
-    hover <- input$plot_hover
-    if (is.null(hover) || is.null(hover$x) || is.null(hover$y) || round(hover$x) <0 || round(hover$y)<0 ) {
-      return(NULL)
-    }
-    isolate(taxon_level<-input$taxonLevel)
-    isolate(plot_type<-input$plotTypeRadio)
-    if(identical(plot_type, "heatmap")){
-      point2<-horizontal_points(ggplot_object$data, hover)
-      point_x=point2$point_x
-    }else{
-      point<-nearPoints(ggplot_object$data, hover, xvar = column_x, yvar=column_y, allRows = T, addDist = T)
-      point_x=round(hover$x)
-      point2<-subset(point, dist_<10)
-    }
-    # return(NULL)
-    cols <- c(column_y, column_x, "rho", "pvalue")
-
-    if(nrow(point2)>0){
-      if(nrow(point2)>1){
-        data_to_show <- point2[nrow(point2):1,cols,with=F]
-        middle_point <- (round(hover$y+0.5)+round(hover$y-0.5))/2
-        point_tooltip(hover = hover, df = data_to_show, point_x=point_x,
-                    point_y = middle_point, left_offset = 30, right_offset = 33,
-                    top_offset = -62*nrow(point2))
-      }else{
-        data_to_show <- point2[,cols,with=F]
-        if(!point2$selected_){
-          # when the point is not selected we need to discover the exact y point
-          # we just match the taxon selected with the index level of that taxon
-          row_num<-match(point2[[column_y]],levels(point[[column_y]]))
-          point_tooltip(hover = hover, df = data_to_show, point_x=point_x,
-                  point_y = row_num, left_offset = 30, right_offset = 33,
-                  top_offset = -68)
-        }else{
-          point_tooltip(hover = hover, df = data_to_show, point_x=point_x,
-                      point_y = round(hover$y), left_offset = 30, right_offset = 33,
-                      top_offset = -68)
-        }
-      }
-    }else{
-      return(NULL)
-    }
   })
 
   # download buttons

@@ -6,9 +6,9 @@ library(data.table)
 library(phyloseq)
 library(httr)
 library(gtools)
+library(plotly)
 source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
-source("../../lib/tooltip/tooltip.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/config.R")
 
@@ -292,7 +292,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
         xlab(sprintf("Axis.1 [ %.1f %%]", percvar[1]))+
         ylab(sprintf("Axis.2 [ %.1f %%]", percvar[2]))+
         theme_eupath_default(
-          # legend.position="bottom", legend.direction = "horizontal",
           legend.title = element_text(face="bold", size=rel(0.9)),
           legend.text = element_text(size=rel(0.9))
         )
@@ -300,12 +299,11 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       ggplot_object <<- chart
       ggplot_build_object <<- ggplot_build(chart)
       
-      output$betaChartWrapper<-renderPlot({
-        chart
+      output$betaChartWrapper<-renderPlotly({
+        ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
       })
       
-      result_to_show<-plotOutput("betaChartWrapper",
-                                 hover = hoverOpts("plot_hover", delay = 60, delayType = "throttle"),
+      result_to_show<-plotlyOutput("betaChartWrapper",
                                  width = paste0(WIDTH,"px"),
                                  height = "500px"
       )
@@ -355,49 +353,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
 	  }
 	)
 	
-	output$hover_info <- renderUI({
-	  hover <- input$plot_hover
-	  if (is.null(hover$x) || is.null(hover$y)){
-	    return(NULL)
-	  }
-	  
-	  isolate(categoryColor<-input$category)
-	  isolate(categoryShape<-input$categoryShape)
-	  
-	  if(identical(categoryColor, NO_METADATA_SELECTED) |
-	     identical(categoryShape, NO_METADATA_SELECTED)){
-	    
-	    if(identical(categoryColor, NO_METADATA_SELECTED) &
-	       identical(categoryShape, NO_METADATA_SELECTED)){
-	      columns_to_show<-c("SampleName", "Axis.1", "Axis.2")
-	      renamed_columns<-c("Sample", "Axis 1", "Axis 2")
-	      top <- -55
-	    }else if(identical(categoryColor, NO_METADATA_SELECTED)){
-	      columns_to_show<-c("SampleName","categoryShape", "Axis.1", "Axis.2")
-	      renamed_columns<-c("Sample",categoryShape, "Axis 1", "Axis 2")
-	      top <- -68
-	    }else{
-	      columns_to_show<-c("SampleName","colorCategory", "Axis.1", "Axis.2")
-	      renamed_columns<-c("Sample",categoryColor, "Axis 1", "Axis 2")
-	      top <- -68
-	    }
-	  }else{
-	    if(identical(categoryColor, categoryShape)){
-	      columns_to_show<-c("SampleName","categoryColor", "Axis.1", "Axis.2")
-	      renamed_columns<-c("Sample",categoryColor, "Axis 1", "Axis 2")
-	      top <- -68
-	    }else{
-	      columns_to_show<-c("SampleName", "colorCategory", "shapeCategory", "Axis.1", "Axis.2")
-	      renamed_columns<-c("Sample", categoryColor, categoryShape, "Axis 1", "Axis 2")
-	      top <- -82 
-	    }
-	  }
-	  
-	  tooltip<-generic_point(hover, ggplot_build_object, ggplot_object$data, WIDTH,
-	                         top, 18, 18, columns_to_show, renamed_columns)
-	  
-	  return(tooltip)
-	})
 	shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
 	shinyjs::show("app-content")
 })
