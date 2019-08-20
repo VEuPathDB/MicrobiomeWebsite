@@ -10,7 +10,6 @@ library(shinyjs)
 shinyUI(
 	fluidPage(
 	  useShinyjs(),
-	  includeCSS("../../lib/tooltip/tooltip.css"),
 	  includeCSS("www/style.css"),
           tags$style(type="text/css",
               ".shiny-output-error { visibility: hidden; }",

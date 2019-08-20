@@ -5,11 +5,10 @@ source("../../functions/wdkDataset.R")
 library(data.table)
 library(httr)
 library(gtools)
+library(plotly)
 source("functions.R")
 source("../../functions/ebrc_functions.R")
-source("../../lib/ggplot_ext/facet_even.R")
 source("../../lib/ggplot_ext/eupath_default.R")
-source("../../lib/tooltip/abundance_tt.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/config.R")
 
@@ -212,7 +211,9 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
 
         chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
           geom_bar(stat="identity", position="stack", color="black")+
-          facet_even(as.formula(paste("~ ",col_renamed)), ncol=1, scales='free_y')+
+	  facet_wrap(as.formula(paste("~ ",col_renamed)), ncol=1, scales='free_y')+
+          #facet_grid(rows = col_renamed, scales='free_y', space='free_y')+
+	  theme(panel.spacing = unit(-.85, "lines")) +
           theme_eupath_default(
             legend.title.align=0.4,
             legend.title = element_text(colour="black", size=rel(1), face="bold"),
@@ -230,22 +231,16 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       ggplot_object<<-chart
       ggplot_build_object<<-ggplot_build(chart)
 
-      output$plotWrapper<-renderPlot({
-        chart
+      output$plotWrapper<-renderPlotly({
+        ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
       })
       
       if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
-        result_to_show<-plotOutput("plotWrapper",
-               hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"),
-               click = clickOpts("plot_click"),
-               dblclick = dblclickOpts("plot_dblclick"),
+        result_to_show<-plotlyOutput("plotWrapper",
                width = paste0(WIDTH,"px"), height = "500px"
              )
       }else{
-        result_to_show<-plotOutput("plotWrapper",
-           hover = hoverOpts("overview_hover", delay = 100, delayType = "debounce"),
-           click = clickOpts("overview_click"), width = paste0(WIDTH,"px"),
-           dblclick = dblclickOpts("plot_dblclick"),
+        result_to_show<-plotlyOutput("plotWrapper",
            height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE
          )
       }
@@ -397,13 +392,11 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
       ggplot_by_top_otu_object <<- chart
       ggplot_build_by_top_otu_object <<- ggplot_build(chart)
  
-      output$topOtuPlotWrapper<-renderPlot({
-        chart
+      output$topOtuPlotWrapper<-renderPlotly({
+        ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
       })
       
-      result_to_show<-plotOutput("topOtuPlotWrapper", width = "100%", height = "500px",
-                                 dblclick = dblclickOpts("plot_dbclick_top_otu"),
-                                 hover = hoverOpts("plot_hoverByTopOTU", delay = 60, delayType = "throttle"))
+      result_to_show<-plotlyOutput("topOtuPlotWrapper", width = "100%", height = "500px")
       
       shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
       shinyjs::show("topTabContent")
@@ -447,7 +440,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
                                             levels=c(other, otu_picked))
         
         chart<-ggplot(data_to_show, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
-          # geom_bar(position = position_stack(reverse = TRUE), stat = "identity", color="black")+
           geom_bar(stat = "identity", color="black")+
           theme_eupath_default(
             legend.title.align=0.4,
@@ -458,19 +450,17 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           labs(x="Samples", y=paste(otu_picked,"Relative Abundance"))+
           coord_flip(expand=F)
         
-        output$singleOtuBarplotWrapper<-renderPlot({
-          chart
+        output$singleOtuBarplotWrapper<-renderPlotly({
+          ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
         })
         
         if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
-          result_to_show<-plotOutput("singleOtuBarplotWrapper", width = paste0(WIDTH,"px"),
-                                     height = "500px",
-                                     hover = hoverOpts("singleOtuTooltip", delay = 100, delayType = "debounce")
+          result_to_show<-plotlyOutput("singleOtuBarplotWrapper", width = paste0(WIDTH,"px"),
+                                     height = "500px"
                                      )
         }else{
-          result_to_show<-plotOutput("singleOtuBarplotWrapper", width = paste0(WIDTH,"px"),
-                                     height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE,
-                                     hover = hoverOpts("singleOtuTooltip", delay = 100, delayType = "debounce")
+          result_to_show<-plotlyOutput("singleOtuBarplotWrapper", width = paste0(WIDTH,"px"),
+                                     height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE
                                      )
         }
       }else{ # end if(identical(category, NO_METADATA_SELECTED))
@@ -501,13 +491,13 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
           theme_eupath_default()+
           labs(x=stringi::stri_trans_totitle(category), y=paste(otu_picked, "Relative Abundance"))
         
-        output$singleOtuPlotWrapper<-renderPlot({
-          chart
+        output$singleOtuPlotWrapper<-renderPlotly({
+          ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
         })
         
-        result_to_show<-plotOutput("singleOtuPlotWrapper", width = paste0(WIDTH,"px"),
-                                   height = "500px",
-                                   hover = hoverOpts("singleOtuTooltip", delay = 60, delayType = "throttle")
+        result_to_show<-plotlyOutput("singleOtuPlotWrapper", width = paste0(WIDTH,"px"),
+                                   height = "500px"
+                        #           hover = hoverOpts("singleOtuTooltip", delay = 60, delayType = "throttle")
         )
         
         merged_to_stats[is.na(merged_to_stats)] <- 0
@@ -541,207 +531,6 @@ sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStor
     result_to_show
   })
   
-  hoversFunctions <- function(){}
-  
-  output$overviewTooltip <- renderUI({
-    hover <- input$overview_hover
-    if (is.null(hover) || is.null(hover$x) || is.null(hover$y) || round(hover$x) <0 || round(hover$y)<0 ) {
-      return(NULL)
-    }
-    barplot_points(ggplot_object, hover, WIDTH, T, 6, 6, 6)
-  })
-  
-  output$hoverByOTU <- renderUI({
-    hover <- input$singleOtuTooltip
-    if (is.null(hover) || is.null(hover$x) || is.null(hover$y) || round(hover$x) <=0 || round(hover$y)<0 ) {
-      return(NULL)
-    }
-    if(identical(input$category, NO_METADATA_SELECTED)){
-      barplot_points(ggplot_by_otu_object, hover, WIDTH, T, 20, 20, 6)
-    }else{
-      smp_details<-ggplot_build_by_otu_object$layout$panel_ranges[[1]]$x.labels # x axis
-      if(round(hover$x)>length(smp_details)){
-        return(NULL)
-      }
-      line_data<-ggplot_build_by_otu_object$data[[1]][round(hover$x),]
-      boxplot_hover <- get_single_boxplot_hover(hover, line_data$xmax, line_data$x, line_data$ymin, line_data$lower, line_data$middle, line_data$upper, line_data$ymax, WIDTH) # removed text to treat better
-      # in the future
-      HTML(boxplot_hover)
-       
-    }
-  })
-  
-  
-  
-  output$hoverByTopOTU <- renderUI({
-    hover <- input$plot_hoverByTopOTU
-    
-    topotus<-ggplot_build_by_top_otu_object$layout$panel_ranges[[1]]$x.labels # x axis
-    topotus<-unlist(topotus)
-    
-    if (is.null(hover$x) || round(hover$y) < 0 || round(hover$x) < 1 || round(hover$x) > length(topotus))
-      return(NULL)
-    
-    if(identical(input$category, NO_METADATA_SELECTED)){
-      hover_otu <- topotus[round(hover$x)]
-      line_data<-ggplot_build_by_top_otu_object$data[[1]][round(hover$x),]
-      boxplot_hover <- get_single_boxplot_hover(hover, line_data$xmax, line_data$x, line_data$ymin, line_data$lower, line_data$middle, line_data$upper, line_data$ymax, WIDTH) # removed text to treat better
-                                                                  # in the future
-      HTML(boxplot_hover)
-    }else{
-      hover_otu <- topotus[round(hover$x)]
-      group_colors <- ggplot_build_by_top_otu_object$plot$scales$scales[[3]]$palette.cache
-
-      group_names <- ggplot_build_by_top_otu_object$plot$scales$scales[[3]]$range$range
-
-      names(group_names)<-group_colors
-
-      interval_value <- ggplot_build_by_top_otu_object$data[[1]][1,"xmax"]-ggplot_build_by_top_otu_object$data[[1]][1,"xmin"]
-      line_data<-subset(ggplot_build_by_top_otu_object$data[[1]], hover$x>=xmin & hover$x<=xmax)
-
-      if(nrow(line_data)==1){
-        category_hover <- group_names[[line_data$fill]]
-        text_hover <- paste0(hover_otu, " [ ", category_hover, " ]")
-        boxplot_hover <- get_single_boxplot_hover(hover, line_data$xmax, line_data$x, line_data$ymin, line_data$lower, line_data$middle, line_data$upper, line_data$ymax, WIDTH) # removed text to treat better
-                                                                            # in the future
-        HTML(boxplot_hover)
-      }
-    }
-  })
-  
-  
-  clicks <- function(){}
-  
-  observeEvent(input$overview_click, {
-    click <- input$overview_click
-    if (is.null(click$y))
-      return(NULL)
-    
-    mstudy <- load_microbiome_data()
-    sample_names <- mstudy$get_sample_names()
-    
-    if(identical(input$category, NO_METADATA_SELECTED)){
-      sample <- sample_names[round(click$y)]
-    }else{
-      pnl_layout <- ggplot_build_object$layout$panel_layout
-      renamed_category <- make.names(input$category)
-      panel_index <- pnl_layout[ pnl_layout[[renamed_category]] == click$panelvar1 , ]$PANEL
-      lvls <- ggplot_build_object$layout$panel_ranges[[panel_index]]$y.labels
-      sample <- lvls[round(click$y)]
-    }
-    raw_data<-mstudy$get_otu_by_sample(sample)[,c("SampleName", input$taxonLevel , "Abundance"),with=F]
-    # raw_data<-subset(raw_data, Abundance>0)
-    raw_data$Abundance<-format(raw_data$Abundance, scientific = F)
-    raw_data[, (input$taxonLevel) := lapply(.SD, function(x){
-      sprintf("<a class='link_table' onclick='goToOtuTab(\"%s\")'>%s</a>", x, x)
-      } ), .SDcols=input$taxonLevel]
-    output$overviewDatatable <- renderDataTable(raw_data,
-                                                  escape = F,
-                                                  options = list(
-                                                    order = list(list(2, 'desc'),list(1, 'asc'))
-                                                  )
-    )
-  })
-  
-  observeEvent(input$plot_dblclick, {
-    click <- input$plot_dblclick
-    
-    if (is.null(click$y))
-      return(NULL)
-    
-    mstudy <- load_microbiome_data()
-    sample_names <- mstudy$get_sample_names()
-    
-    sample<-""
-    otu<-NULL
-    
-    if(identical(input$category, NO_METADATA_SELECTED)){
-      sample <- sample_names[round(click$y)]
-      
-      click_data<-subset(ggplot_object$data, SampleName==sample & Abundance>0)
-      
-      layer_data_click<-subset(layer_data(ggplot_object), x==round(click$y))
-      
-      unique_y<-unique(layer_data_click$y)
-      
-      abundances_filtered <- get_abundances_from_plot(unique_y)
-      
-      abundances_joined <- join_abundance(abundances_filtered, click_data)
-      
-      all_sum <- cumsum(abundances_joined$Abundance)
-      
-      index_abundance_click = get_abundance_index(all_sum, click$x)
-      
-      if(index_abundance_click == -1)
-        otu<-NULL
-      
-      otu<-abundances_joined[index_abundance_click,get(input$taxonLevel)]
-    }else{
-      pnl_layout <- ggplot_build_object$layout$panel_layout
-      renamed_category <- make.names(input$category)
-      panel_index <- pnl_layout[ pnl_layout[[renamed_category]] == click$panelvar1 , ]$PANEL
-      if(length(panel_index) > 0){
-        lvls <- ggplot_build_object$layout$panel_ranges[[panel_index]]$y.labels
-        sample <- lvls[round(click$y)]
-        if(!is.na(sample)){
-          click_data<-subset(ggplot_object$data, SampleName==sample & Abundance>0)
-          
-          layer_data_click<-subset(layer_data(ggplot_object), x==round(click$y) & PANEL==panel_index)
-          unique_y<-unique(layer_data_click$y)
-          unique_y<-unique_y[unique_y>0]
-          abundances_filtered <- get_abundances_from_plot(unique_y)
-
-          abundances_joined <- join_abundance(abundances_filtered, click_data)
-          all_sum <- cumsum(abundances_joined$Abundance)
-
-          index_abundance_click = get_abundance_index(all_sum, click$x)
-
-          if(index_abundance_click == -1)
-            otu<-NULL
-          
-          otu<-abundances_joined[index_abundance_click,get(input$taxonLevel)]
-          
-          abundances_joined_fill <- abundances_joined
-          
-        }else{
-          otu<-NULL
-        }
-      }else{
-        otu<-NULL
-      }
-    }
-    if(!is.null(otu)){
-      updateSelectizeInput(session, "filterOTU",
-                           choices = global_otus,
-                           selected = otu,
-                           options = list(placeholder = 'Choose a OTU'),
-                           server = TRUE)
-      updateTabsetPanel(session, "tabs", selected = "byOTU") 
-    }
-  })
-  
-  observeEvent(input$plot_dbclick_top_otu, {
-    click <- input$plot_dbclick_top_otu
-    
-    if (is.null(click$y))
-      return(NULL)
-    
-    topotus<-ggplot_build_by_top_otu_object$layout$panel_ranges[[1]]$x.labels # x axis
-    topotus<-unlist(topotus)
-    
-    otu <- topotus[round(click$x)]
-    otu <- gsub("\n", " ", otu)
-    
-    if(!is.null(otu)){
-      updateSelectizeInput(session, "filterOTU",
-                           choices = global_otus,
-                           selected = otu,
-                           options = list(placeholder = 'Choose a OTU'),
-                           server = TRUE)
-      updateTabsetPanel(session, "tabs", selected = "byOTU") 
-    }
-    
-  })
   
   downloads<-function(){}
   output$btnDownloadPNG <- downloadHandler(
