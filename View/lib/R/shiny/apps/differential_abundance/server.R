@@ -6,6 +6,7 @@ library(data.table)
 library(DESeq2)
 library(httr)
 library(plotly)
+library(dplyr)
 source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/ggplot_ext/eupath_functions.R")
@@ -456,9 +457,29 @@ shinyServer(function(input, output, session) {
         
         sigtab<-sigtab[order(sigtab$log2FoldChange),]
         sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
-        
+	#need either to get rel abund directly, or figure out why the values dont match live site
+	message("relative:")
+	
+	rownames(abundance_otu_relative) <- abundance_taxa[,taxon_level]
+	myOTU <- as.data.frame(t(abundance_otu_relative))
+	myOTU$sampleName <- rownames(t(abundance_otu_relative))
+	samdata <- data.frame(sample_data(new_physeq_obj))
+	samdata$sampleName <- rownames(samdata)
+	samdata[, category_column] <- paste("Median abundance", as.character(samdata[, category_column]))
+	data <- merge(samdata, myOTU, by = 'sampleName') 
+	data <- data %>%
+  		group_by(get(category_column)) %>%
+		summarise_at(vars(-sampleName), funs(median(as.numeric(.), na.rm = TRUE)))
+	data[,2] <- data[,1]
+	names <- data[,category_column]
+	data <- t(data[3:length(data)])
+	colnames(data) <- unlist(names)
+	data <- as.data.frame.matrix(data)
+	data[[taxon_level]] <- rownames(data)
         cols_to_show<-sigtab[,c("baseMean", "log2FoldChange", "pvalue", taxon_level)]
-        
+	cols_to_show <- merge(cols_to_show, data, by=taxon_level)
+	       
+ 
         output$datatableOutput<-renderDataTable(cols_to_show,
                                                 options = list(
                                                   order = list(list(1, 'desc'))
