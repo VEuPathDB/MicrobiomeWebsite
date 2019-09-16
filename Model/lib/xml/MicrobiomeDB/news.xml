@@ -16,6 +16,36 @@
 -->
 
 <record>
+  <attribute name="headline">MicrobiomeDB 14 Released</attribute>
+  <attribute name="date">05 Sep 2019 13:00</attribute>
+  <attribute name="tag">microbiome_14_release</attribute>
+  <attribute name="category">release</attribute>
+  <attribute name="item">
+    <![CDATA[
+      <p><strong>We are pleased to announce the release of MicrobiomeDB 14</strong></p>
+      <section>
+        <h3><b>New data in this release</b></h3>
+        <ul>
+        <li>There is no new data in this release.
+        </ul>
+      </section>
+      <section>
+        <h3><b>New features in this release</b></h3>
+        <ul>
+        <li>All studies are now searchable via a text box on the landing page, making it easy to quickly identify studies of interest.
+        <li>Shiny apps are now interactive!  Static ggplot2 graphics have been replaced with plotly graphics, allowing users to select, zoom and interact with plots in new and exciting ways.
+        </ul>
+      </section>
+      <section>
+        <aside>
+           Note: Our bimonthly database releases incorporate new data and correct old data when necessary. Changes in annotation and new experimental data may slightly alter your search results by increasing or decreasing the number of hits. When search parameters change with a new release, we invalidate (Ø) the search and ask you to rerun it. When sample IDs are updated or removed, we map the old IDs to the new ones, remove the old IDs from your Basket, and leave your Favorites page alone. 
+        </aside>
+      </section>
+    ]]>
+  </attribute>
+</record>
+
+<record>
   <attribute name="headline">MicrobiomeDB 13 Released</attribute>
   <attribute name="date">25 June 2019 13:00</attribute>
   <attribute name="tag">microbiome_13_release</attribute>
