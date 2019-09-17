@@ -8,95 +8,51 @@
   <import file="${projectsDir}/MicrobiomeModel/build.xml" />
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooo    Checkout    oooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
-  <target name="MicrobiomeWebsite-ChildCheckout">
-    <available file="${projectsDir}/EbrcWebSvcCommon" type="dir"  property="EbrcWebSvcCommon.present" />
-    <available file="${projectsDir}/MicrobiomeModel" type="dir"  property="MicrobiomeModel.present" />
-    <antcall target="EbrcWebSvcCommon-Checkout"/>
-    <antcall target="Microbiome-Checkout"/>
-  </target>
-
-  <target name="EbrcWebSvcCommon-Checkout" unless="EbrcWebSvcCommon.present">
-    <ant target="defaultProjectCheckout" inheritAll="false">
-      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/apidb/EbrcWebSvcCommon"/>
-      <property name="project" value="EbrcWebSvcCommon"/>
-      <property name="version" value="??"/>
-    </ant>
-  </target>
-
-  <target name="MicrobiomeModel-Checkout" unless="MicrobiomeModel.present">
-    <ant target="defaultProjectCheckout" inheritAll="false">
-      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/apidb/MicrobiomeModel"/>
-      <property name="project" value="MicrobiomeModel"/>
-      <property name="version" value="api-build-9"/>
-    </ant>
-  </target>
-
-
-
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooo    Update    oooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
-  <target name="MicrobiomeWebsite-ChildUpdate" >
-    <ant target="defaultProjectUpdate">
-      <property name="project" value="EbrcWebSvcCommon"/>
-    </ant>
-     <ant target="defaultProjectUpdate">
-      <property name="project" value="MicrobiomeModel"/>
-    </ant>
-
-  </target>
-
-
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeWebsite-Installation" depends="EbrcWebSvcCommon-Installation,
-  	                                                   MicrobiomeWebsite-MavenInstallation,
+                                                       MicrobiomeWebsite-MavenInstallation,
                                                        MicrobiomeModel-Installation,
                                                        MicrobiomeWebsite/Model-Installation,
                                                        MicrobiomeWebsite/View-Installation,
                                                        MicrobiomeWebsite/Site-Installation">
     <ant target="defaultProjectInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
+      <property name="project" value="MicrobiomeWebsite" />
     </ant>
   </target>
-	
-	<target name="MicrobiomeWebsite-MavenInstallation">
-	  <ant target="mavenBuildProject">
-	    <property name="project" value="MicrobiomeWebsite"/>
-	  </ant>
-	  <property name="alreadyBuilt" value="true"/>
-	</target>
 
-<!-- Added START-->
-<!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
+  <target name="MicrobiomeWebsite-MavenInstallation">
+    <ant target="mavenBuildProject">
+      <property name="project" value="MicrobiomeWebsite" />
+    </ant>
+    <property name="alreadyBuilt" value="true" />
+  </target>
+
+  <!-- Added START-->
+  <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
   <target name="MicrobiomeWebsite/Model-Installation">
     <ant target="defaultComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="Model"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="Model" />
     </ant>
-  </target>  
+  </target>
 
   <target name="MicrobiomeWebsite/Site-Installation">
     <ant target="defaultComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="Site"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="Site" />
     </ant>
   </target>
 
   <target name="MicrobiomeWebsite/View-Installation">
     <ant target="defaultComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="View"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="View" />
     </ant>
   </target>
 
-<!-- Added  END-->
+  <!-- Added  END-->
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
@@ -109,23 +65,23 @@
 
   <target name="MicrobiomeWebsite/Site-WebInstallation">
     <ant target="eupathWebComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="Site"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="Site" />
     </ant>
   </target>
 
   <target name="MicrobiomeWebsite/View-WebInstallation">
 
     <ant target="defaultComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="View"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="View" />
     </ant>
-    
+
     <ant target="defaultWebComponentInstall">
-      <property name="project" value="MicrobiomeWebsite"/>
-      <property name="component" value="View"/>
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="component" value="View" />
     </ant>
-    
+
   </target>
 
 
@@ -135,7 +91,7 @@
 
   <target name="MicrobiomeWebsite-Release">
     <ant target="defaultProjectRelease">
-      <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS"/>
+      <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS" />
     </ant>
   </target>
 
@@ -146,7 +102,7 @@
   <target name="MicrobiomeWebsite-Distributable">
 
     <copy todir="${targetDir}">
-      <fileset dir="${projectsDir}" >
+      <fileset dir="${projectsDir}">
         <exclude name="**/CVS/*" />
       </fileset>
     </copy>
