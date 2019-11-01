@@ -1,6 +1,7 @@
-import { keyBy, memoize, partition } from 'lodash';
 import Header from 'ebrc-client/App/Header';
 import CardBasedIndexController from 'ebrc-client/controllers/CardBasedIndexController';
+import StudyAnswerController from 'ebrc-client/component-wrappers/StudyAnswerController';
+import StudyRecordHeading from 'ebrc-client/component-wrappers/StudyRecordHeading';
 import { menuItemsFromSocials, iconMenuItemsFromSocials } from 'ebrc-client/App/Utils/Utils';
 import { StudyMenuItem } from 'ebrc-client/App/Studies';
 import logoUrl from 'site/images/18170.png';
@@ -14,7 +15,13 @@ import { ImageCard } from 'ebrc-client/App/ImageCard';
 export default {
   SiteHeader: () => SiteHeader,
   IndexController: () => IndexController,
-  Footer: () => Footer
+  Footer: () => Footer,
+  RecordHeading: DefaultComponent => props => props.recordClass.urlSegment === 'dataset'
+    ? <StudyRecordHeading {...props} DefaultComponent={DefaultComponent} showSearches />
+    : <DefaultComponent {...props }/>,
+  AnswerController: DefaultComponent => props => props.ownProps.recordClass === 'dataset'
+    ? <StudyAnswerController {...props} DefaultComponent={DefaultComponent} />
+    : <DefaultComponent {...props }/>
 }
 
 function SiteHeader() {
@@ -46,55 +53,10 @@ function IndexController() {
 
 function getSiteData(state) {
   return {
-    studies: applyCustomDisplayNameToStudySearches(state.studies),
-    searches: applyCustomIconToSearchCards(state.searchCards),
+    studies: state.studies,
+    searches: state.searchCards,
     visualizations: { isLoading: false, entities: vizData }
   };
-}
-
-function applyCustomDisplayNameToStudySearches(studies) {
-  return {
-    ...studies,
-    entities: studies.entities && studies.entities.map(study => ({
-      ...study,
-      searches: study.searches.map(search => ({
-        ...search,
-        displayName: search.icon.toLowerCase().includes('details') ? 'Sample Details' : 'Taxon Abundance'
-      }))
-    }))
-  };
-}
-
-const iconDirectiveRe = /^\s*#\s*iconType=(\w+)\s*$/;
-
-function applyCustomIconToSearchCards(searchCards) {
-  return {
-    ...searchCards,
-    entities: searchCards.entities && searchCards.entities.map(search => {
-      const [ directives, descriptionLines ] = partition(search.description.split('\n'), line => iconDirectiveRe.test(line));
-      const description = descriptionLines.join('\n').trim();
-      const icon = directives.length === 0
-        ? search.icon
-        : getIconByType(directives[0].match(iconDirectiveRe)[1]);
-
-      return {
-        ...search,
-        description,
-        icon
-      };
-    })
-  };
-}
-
-function getIconByType(type = '') {
-  switch(type) {
-    case 'taxon':
-    case 'taxa':
-      return 'mbio-taxaQuery_light';
-    default:
-      return 'mbio-sampleDetails_light';
-
-  }
 }
 
 function getHomeContent({ studies, searches, visualizations }) {
@@ -136,50 +98,26 @@ function getHomeContent({ studies, searches, visualizations }) {
   ];
 }
 
-const samplesSearchName = 'SampleQuestions.MicrobiomeSampleByMetadata';
-const taxonSearchName = 'SampleQuestions.MicrobiomeSampleByTaxonAbundance';
-
-const makeCrossStudyStudy = memoize(questions => {
-  if (questions == null) return;
-
-  const questionsByName = keyBy(questions, 'name');
-  const samplesSearch = questionsByName[samplesSearchName];
-  const taxonSearch = questionsByName[taxonSearchName];
-
-  return {
-    name: 'Cross Study Analysis',
-    id: 'DS_all',
-    route: '/search/dataset/AllDatasets/result',
-    searches: [
-      {
-        displayName: samplesSearch.displayName,
-        name: samplesSearch.name,
-        icon: samplesSearch.iconName,
-      },
-      {
-        displayName: taxonSearch.displayName,
-        name: taxonSearch.name,
-        icon: taxonSearch.iconName,
-      },
-    ]
-  };
-});
-
 function makeHeaderMenuItems(state) {
-  const { siteConfig, questions } = state.globalData;
+  const { siteConfig } = state.globalData;
   const siteData = getSiteData(state);
   const { studies } = siteData;
   const socialIcons = iconMenuItemsFromSocials(siteConfig);
   const socialLinks = menuItemsFromSocials(siteConfig);
-  const allStudiesStudy = makeCrossStudyStudy(questions);
+  const {vimeoUrl} = siteConfig;
 
   return {
     mainMenu: [
       {
         id: 'search',
         text: 'Search a Study',
-        children: (studies.entities == null ? [] : studies.entities)
-          .map(study => ({ text: <StudyMenuItem study={study} config={siteConfig} /> }))
+        children: [
+          {
+            text: <div style={{ padding: '0.5em 0' }}>View All Studies</div>,
+            route: '/search/dataset/Studies/result'
+          }
+        ].concat(studies.entities == null ? [] : studies.entities
+          .map(study => ({ text: <StudyMenuItem study={study} config={siteConfig} /> })))
       },
       {
         id: 'workspace',
@@ -189,11 +127,11 @@ function makeHeaderMenuItems(state) {
             text: 'My Search Strategies',
             appUrl: '/showApplication.do'
           },
-          {
+/*          {
             text: 'Analyze My Experiment',
             appUrl: '/app/galaxy-orientation'
           },
-          {
+*/        {
             text: 'My Basket',
             appUrl: '/showApplication.do?tab=basket',
             loginRequired: true
@@ -223,7 +161,8 @@ function makeHeaderMenuItems(state) {
           },
           {
             text: 'Tutorials and Resources',
-            url: 'https://docs.google.com/document/u/1/d/1a_9lPf5lV0fTW1VcA48pGsnFAcwhMOWqCTQlyHEVoAQ/pub'
+            url: vimeoUrl,
+            target: '_blank'
           },
           {
             text: 'About MicrobiomeDB',
