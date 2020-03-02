@@ -21,27 +21,35 @@ source("../../lib/mbiome/sample-table.R")
 #' @example
 #' import.eupath("~/Projects/microbiomedb/TaxaRelativeAbundance.txt",
 #'     "~/Projects/microbiomedb/Characteristics.txt")
-import.eupath <- function(taxa_abundance_path, sample_path, aggregate_by="Phylum", use_relative_abundance=T){
+import.eupath <- function(taxa_abundance_path, sample_path, datasets_path, aggregate_by="Phylum", use_relative_abundance=T){
   df_abundance <-
     fread(
       taxa_abundance_path,
       col.names = c("Sample","Taxon", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "RelativeAbundance", "AbsoluteAbundance", "EmptyColumn"),
-      colClasses = c("character", "integer", "character", "character", "character", "character", "character", "character", "character", "numeric", "integer", "character")
+      colClasses = c("character", "character", "character", "character", "character", "character", "character", "character", "character", "numeric", "integer", "character")
     )
+  df_abundance[,EmptyColumn:=NULL]
 
   df_sample <-
     fread(
       sample_path,
+      header = T,
       col.names = c("SampleName", "Source", "Property", "Value", "Type", "Filter", "EmptyColumn"),
       colClasses = c("character", "character", "character", "character", "character", "character", "character")
     )
-  # Removing the last unuseless column
-  
-  df_abundance[,EmptyColumn:=NULL]
-  
-  
+
+  df_datasets <- 
+    fread(
+      datasets_path,
+      header = T,
+      col.names = c("Sample ID", "dataset_presenter_id", "display_name", "Dataset Summary", "EmptyColumn"),
+      colClasses = c("character", "character", "character", "character", "character")
+    )
+ df_datasets_name <- data.frame (SampleName = df_datasets$"Sample ID", Source = "data set", Property = "Dataset name", Value = df_datasets$"display_name", Type = "string", Filter = "membership", EmptyColumn = "", stringsAsFactors=F)
+ df_datasets_summary <- data.frame (SampleName = df_datasets$"Sample ID", Source = "data set", Property = "Dataset summary", Value = df_datasets$"Dataset Summary", Type = "string", Filter = "membership", EmptyColumn = "", stringsAsFactors = F)
+
   otu_object <- OTUClass$new(df_abundance, aggregate_by = aggregate_by, use_relative_abundance=use_relative_abundance)
-  
-  sample_object <- SampleClass$new(df_sample)
+  sample_object <- SampleClass$new(rbindlist(list(df_sample, df_datasets_name, df_datasets_summary)))
+
   MicrobiomeData$new(otu_object, sample_object)
 }

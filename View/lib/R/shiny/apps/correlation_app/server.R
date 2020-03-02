@@ -53,12 +53,10 @@ shinyServer(function(input, output, session) {
   load_microbiome_data <- reactive({
     if(is.null(mstudy_obj)){
 
-abundance_file <- getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
-sample_file <- getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
-
       mstudy_obj <<- import.eupath(
-        taxa_abundance_path = abundance_file,
-        sample_path = sample_file,
+        taxa_abundance_path = getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir),
+        sample_path = getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir),
+        datasets_path = getWdkDatasetFile('Datasets.tab', session, FALSE, dataStorageDir),
         aggregate_by = input$taxonLevel
       )
       mstats <<- MicrobiomeStats$new(mstudy_obj)
