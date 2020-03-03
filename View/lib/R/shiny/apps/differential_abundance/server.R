@@ -449,10 +449,9 @@ shinyServer(function(input, output, session) {
         
         sigtab<-sigtab[order(sigtab$log2FoldChange),]
         sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
-	#need either to get rel abund directly, or figure out why the values dont match live site
-	message("relative:")
 	
-	rownames(abundance_otu_relative) <- abundance_taxa[,taxon_level]
+	rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level], paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]))
+
 	myOTU <- as.data.frame(t(abundance_otu_relative))
 	myOTU$sampleName <- rownames(t(abundance_otu_relative))
 	samdata <- data.frame(sample_data(new_physeq_obj))
