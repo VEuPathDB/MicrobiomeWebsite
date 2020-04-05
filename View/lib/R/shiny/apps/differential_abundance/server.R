@@ -11,10 +11,11 @@ source("../../functions/ebrc_functions.R")
 source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/ggplot_ext/eupath_functions.R")
 source("../../lib/config.R")
+source("../../lib/mbiome/mbiome-reader.R")
 source("functions.R")
 
 shinyServer(function(input, output, session) {
-  
+  mstudy_obj <- NULL 
   df_abundance <- NULL
   df_sample <- NULL
   df_sample.formatted <- NULL
@@ -62,23 +63,14 @@ shinyServer(function(input, output, session) {
   physeq <- reactive({
     # Change with the file with abundances
     if(is.null(df_abundance)){
-      taxa<-getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir)
-      characteristics<-getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir)
-	df_abundance <<-
-        read.csv(taxa,
-          sep = "\t",
-          col.names = c("Sample","Taxon", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "RelativeAbundance", "AbsoluteAbundance", "EmptyColumn"),
-          colClasses = c("character", "integer", "character", "character", "character", "character", "character", "character", "character", "numeric", "integer", "character")
-        )
-      # Change with the Characteristics file
-      df_sample <<-
-        read.csv(
-	characteristics,
-          sep = "\t",
-          col.names = c("SampleName", "Source", "Property", "Value", "Type", "Filter", "EmptyColumn"),
-          colClasses = c("character", "character", "character", "character", "character", "character", "character")
-        )
-      
+      mstudy_obj <<- import.eupath(
+        taxa_abundance_path = getWdkDatasetFile('TaxaRelativeAbundance.tab', session, FALSE, dataStorageDir),
+        sample_path = getWdkDatasetFile('Characteristics.tab', session, FALSE, dataStorageDir),
+        datasets_path = getWdkDatasetFile('Datasets.tab', session, FALSE, dataStorageDir)
+      )
+      df_abundance <<- as.data.frame(mstudy_obj$otu_table$otu_dt)
+      df_sample <<- as.data.frame(mstudy_obj$sample_table$sample_dt) 
+
       df_sample.formatted <<- dcast(data = df_sample,formula = SampleName~Property, value.var = "Value")
       
       rownames(df_sample.formatted) <<- df_sample.formatted[,1]
@@ -457,10 +449,9 @@ shinyServer(function(input, output, session) {
         
         sigtab<-sigtab[order(sigtab$log2FoldChange),]
         sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
-	#need either to get rel abund directly, or figure out why the values dont match live site
-	message("relative:")
 	
-	rownames(abundance_otu_relative) <- abundance_taxa[,taxon_level]
+	rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level], paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]))
+
 	myOTU <- as.data.frame(t(abundance_otu_relative))
 	myOTU$sampleName <- rownames(t(abundance_otu_relative))
 	samdata <- data.frame(sample_data(new_physeq_obj))
