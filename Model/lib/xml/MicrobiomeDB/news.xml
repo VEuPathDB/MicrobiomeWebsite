@@ -16,6 +16,35 @@
 -->
 
 <record>
+  <attribute name="headline">MicrobiomeDB 16 Released</attribute>
+  <attribute name="date">03 Feb 2019 13:00</attribute>
+  <attribute name="tag">microbiome_16_release</attribute>
+  <attribute name="category">release</attribute>
+  <attribute name="item">
+    <![CDATA[
+      <p><strong>We are pleased to announce the release of MicrobiomeDB 16</strong></p>
+      <section>
+        <h3><b>New data in this release</b></h3>
+        <ul>
+        <li>A study of 271 children from the Amazonian lowlands near Iquitos, Peru, for which stool samples were collected at postnatal months 6, 12, 18, and 24"
+        </ul>
+      </section>
+      <section>
+        <h3><b>New features in this release</b></h3>
+        <ul>
+        <li>All studies can now be viewed as a table by going to the 'Search a Study' menu and selecting 'View All Studies'.
+        </ul>
+      </section>
+      <section>
+        <aside>
+           Note: Our bimonthly database releases incorporate new data and correct old data when necessary. Changes in annotation and new experimental data may slightly alter your search results by increasing or decreasing the number of hits. When search parameters change with a new release, we invalidate (Ø) the search and ask you to rerun it. When sample IDs are updated or removed, we map the old IDs to the new ones, remove the old IDs from your Basket, and leave your Favorites page alone. 
+        </aside>
+      </section>
+    ]]>
+  </attribute>
+</record>
+
+<record>
   <attribute name="headline">MicrobiomeDB 15 Released</attribute>
   <attribute name="date">05 Nov 2019 13:00</attribute>
   <attribute name="tag">microbiome_15_release</attribute>
