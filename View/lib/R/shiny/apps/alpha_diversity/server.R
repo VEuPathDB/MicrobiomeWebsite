@@ -67,7 +67,7 @@ shinyServer(function(input, output, session) {
           properties <<- NULL
         }
       } else {
-	properties <<- NULL
+        properties <<- NULL
       }
     }
 
@@ -373,25 +373,25 @@ shinyServer(function(input, output, session) {
         #if xaxis is numeric, only bin second facet to start
         if (is.numeric(richness_merged[[horizontalCategory]])) {
           if (uniqueN(richness_merged[[horizontalCategory]]) > 10) {
-	    richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
+            richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
           } else {
-	    richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
-	  }
-	} 
+            richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
+          }
+        } 
 
         #if box plot also bin xaxis and facet1
         if (!identical(plotRadio, "dotplot")) {
-	  if (uniqueN(richness_merged[[category]]) > 10) {
+          if (uniqueN(richness_merged[[category]]) > 10) {
             richness_merged[[category]] <- rcut_number(richness_merged[[category]])
-	  } else {
-	    richness_merged[[category]] <- as.factor(richness_merged[[category]])
-	  }
+          } else {
+            richness_merged[[category]] <- as.factor(richness_merged[[category]])
+          }
           if (is.numeric(richness_merged[[verticalCategory]])) {
-	    if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
+            if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
               richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
-	    } else {
-	      richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
-	    }
+            } else {
+              richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
+            }
           }
         }   
 
@@ -447,17 +447,17 @@ shinyServer(function(input, output, session) {
         if (is.numeric(richness_merged[[horizontalCategory]])) {
           if (uniqueN(richness_merged[[horizontalCategory]]) > 10) {
             richness_merged[[horizontalCategory]] <- rcut_number(richness_merged[[horizontalCategory]])
-	  } else {
-	    richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
-	  }
+          } else {
+            richness_merged[[horizontalCategory]] <- as.factor(richness_merged[[horizontalCategory]])
+          }
         }
 
         if (is.numeric(richness_merged[[verticalCategory]])) {
-	  if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
+          if (uniqueN(richness_merged[[verticalCategory]]) > 10) {
             richness_merged[[verticalCategory]] <- rcut_number(richness_merged[[verticalCategory]])
-	  } else {
-	    richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
-	  }
+          } else {
+            richness_merged[[verticalCategory]] <- as.factor(richness_merged[[verticalCategory]])
+          }
         } 
  
         chart<-ggplot(richness_merged, aes_string(sprintf("`%s`",category), measure))+

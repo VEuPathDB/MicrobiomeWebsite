@@ -267,11 +267,11 @@ shinyServer(function(input, output, session) {
           #bin shape col if numeric
           #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$shapeCategory)) {
-        if (uniqueN(merged$shapeCategory) > 10) {
-              merged$shapeCategory <- rcut_number(merged$shapeCategory)
-        } else {
-          merged$shapeCategory <- as.factor(merged$shapeCategory)
-        }
+            if (uniqueN(merged$shapeCategory) > 10) {
+                  merged$shapeCategory <- rcut_number(merged$shapeCategory)
+            } else {
+              merged$shapeCategory <- as.factor(merged$shapeCategory)
+            }
           } else if (is.character(merged$shapeCategory)) {
           merged$shapeCategory <- factor(merged$shapeCategory, levels=mixedsort(levels(as.factor(merged$shapeCategory))))
           }
