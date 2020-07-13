@@ -62,7 +62,7 @@ shinyServer(function(input, output, session) {
           properties <<- NULL
         }
       } else {
-	properties <<- NULL
+    properties <<- NULL
       }
     }
 
@@ -175,8 +175,7 @@ shinyServer(function(input, output, session) {
       categoryColor <- ifelse(identical(categoryColor,""), NO_METADATA_SELECTED, categoryColor)
       categoryShape <- ifelse(identical(categoryShape,""), NO_METADATA_SELECTED, categoryShape)
       
-      if(identical(categoryColor, NO_METADATA_SELECTED) &
-         identical(categoryShape, NO_METADATA_SELECTED)){
+      if(identical(categoryColor, NO_METADATA_SELECTED) & identical(categoryShape, NO_METADATA_SELECTED)){
         
         chart<-ggplot(ps_data, aes(Axis.1, Axis.2))+
           geom_point(aes(size = 4, alpha= 0.5))+
@@ -191,7 +190,11 @@ shinyServer(function(input, output, session) {
         if (is.character(merged$colorCategory)) {
           merged$colorCategory <- factor(merged$colorCategory, levels=mixedsort(levels(as.factor(merged$colorCategory))))
         }
- 
+        if (is.character(merged$colorCategory)){
+          colourGuide = guide_legend(keywidth = 1.7, keyheight = 1.7,override.aes = list(size=5))
+        } else {
+          colourGuide = guide_colourbar()
+        }
         chart<-ggplot(merged, aes(Axis.1, Axis.2))+
           theme_eupath_default(
             legend.title.align=0.4,
@@ -199,8 +202,7 @@ shinyServer(function(input, output, session) {
           )+
           geom_point(aes(size = 4, alpha= 0.5, color=colorCategory))+
           
-          guides(shape=FALSE, size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
-                                                                         override.aes = list(size=5)))+
+          guides(shape=FALSE, size=FALSE, alpha=F, colour = colourGuide)+
           labs(color=categoryColor)
         
       }else if(identical(categoryColor, NO_METADATA_SELECTED) & !identical(categoryShape, NO_METADATA_SELECTED)){
@@ -213,11 +215,11 @@ shinyServer(function(input, output, session) {
         #bin shape col if numeric
         #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
         if (is.numeric(merged$categoryShape)) {
-	  if (uniqueN(merged$categoryShape) > 10) {
-            merged$categoryShape <- rcut_number(merged$categoryShape)
-          } else {
-	    merged$categoryShape <- as.factor(merged$categoryShape)
-	  }
+          if (uniqueN(merged$categoryShape) > 10) {
+                merged$categoryShape <- rcut_number(merged$categoryShape)
+              } else {
+            merged$categoryShape <- as.factor(merged$categoryShape)
+          }
         } else if (is.character(merged$categoryShape)) {
           merged$categoryShape <- factor(merged$categoryShape, levels=mixedsort(levels(as.factor(merged$categoryShape))))
         } 
@@ -237,19 +239,22 @@ shinyServer(function(input, output, session) {
           
           #bin shape col if numeric
           if (is.numeric(merged$categoryColor)) {
-	    if (uniqueN(merged$categoryColor) > 10) {
-              merged$categoryColor <- rcut_number(merged$categoryColor)
-	    } else {
-	      merged$categoryColor <- as.factor(merged$categoryColor)
-	    }
+            if (uniqueN(merged$categoryColor) > 10) {
+                  merged$categoryColor <- rcut_number(merged$categoryColor)
+            } else {
+              merged$categoryColor <- as.factor(merged$categoryColor)
+            }
           } else if (is.character(merged$categoryColor)) {
           merged$categoryColor <- factor(merged$categoryColor, levels=mixedsort(levels(as.factor(merged$categoryColor))))
           }
-
+          if (is.character(merged$colorCategory) ){
+            colourGuide = guide_legend(keywidth = 1.7, keyheight = 1.7,override.aes = list(size=5))
+          } else {
+            colourGuide = guide_colourbar()
+          }
           chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=categoryColor, shape=categoryColor))+
-            guides(size=FALSE, alpha=F, colour = guide_legend(keywidth = 1.7, keyheight = 1.7,
-                                                              override.aes = list(size=5)))+
+            guides(size=FALSE, alpha=F, colour = colourGuide )+
             # guides(size=FALSE, alpha=F)+
             scale_shape_manual(values=shapes[1:quantity_shape])+
             labs(color=categoryColor, shape=categoryColor)
@@ -262,20 +267,24 @@ shinyServer(function(input, output, session) {
           #bin shape col if numeric
           #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
           if (is.numeric(merged$shapeCategory)) {
-	    if (uniqueN(merged$shapeCategory) > 10) {
+        if (uniqueN(merged$shapeCategory) > 10) {
               merged$shapeCategory <- rcut_number(merged$shapeCategory)
-	    } else {
-	      merged$shapeCategory <- as.factor(merged$shapeCategory)
-	    }
+        } else {
+          merged$shapeCategory <- as.factor(merged$shapeCategory)
+        }
           } else if (is.character(merged$shapeCategory)) {
           merged$shapeCategory <- factor(merged$shapeCategory, levels=mixedsort(levels(as.factor(merged$shapeCategory))))
           }
 
-          chart<-ggplot(merged, aes(Axis.1, Axis.2))+
+        if (uniqueN(merged$colorCategory) > 10){
+          colourGuide = guide_colourbar()
+        } else {
+          colourGuide = guide_legend(keywidth = 1.7, keyheight = 1.7,override.aes = list(size=5))
+        }
+        chart<-ggplot(merged, aes(Axis.1, Axis.2))+
             geom_point(aes(size = 4, alpha= 0.5, color=colorCategory, shape=shapeCategory))+
             # guides(size=FALSE, alpha=F, colour = guide_legend(order = 1), shape = guide_legend(order = 2))+
-            guides(size=FALSE, alpha=F, colour = guide_legend(order = 1, keywidth = 1.7, keyheight = 1.7,
-                                                              override.aes = list(size=5)),
+            guides(size=FALSE, alpha=F, colour = colourGuide,
                    shape = guide_legend(order = 2, override.aes = list(size = 5)))+
             
             
@@ -315,42 +324,42 @@ shinyServer(function(input, output, session) {
   })
 
 
-	output$btnDownloadPNG <- downloadHandler(
-	  filename = "plot.png",
-	  content = function(file) {
-	    png(file, width=1200,height=800,units="px")
-	    print(ggplot_object)
-	    dev.off()
-	  }
-	)
+    output$btnDownloadPNG <- downloadHandler(
+      filename = "plot.png",
+      content = function(file) {
+        png(file, width=1200,height=800,units="px")
+        print(ggplot_object)
+        dev.off()
+      }
+    )
 
-	output$btnDownloadEPS <- downloadHandler(
-	  filename = "plot.eps",
-	  content = function(file) {
-	    # setEPS()
-	    # postscript(file, width=16,height=10.67, family = "Helvetica")
-	    cairo_ps(file, width=16,height=10.67)
-	    print(ggplot_object)
-	    dev.off()
-	  }
-	)
+    output$btnDownloadEPS <- downloadHandler(
+      filename = "plot.eps",
+      content = function(file) {
+        # setEPS()
+        # postscript(file, width=16,height=10.67, family = "Helvetica")
+        cairo_ps(file, width=16,height=10.67)
+        print(ggplot_object)
+        dev.off()
+      }
+    )
 
-	output$btnDownloadSVG <- downloadHandler(
-	  filename = "plot.svg",
-	  content = function(file) {
-	    svg(file, width=16,height=10.67)
-	    print(ggplot_object)
-	    dev.off()
-	  }
-	)
+    output$btnDownloadSVG <- downloadHandler(
+      filename = "plot.svg",
+      content = function(file) {
+        svg(file, width=16,height=10.67)
+        print(ggplot_object)
+        dev.off()
+      }
+    )
 
-	output$btnDownloadCSV <- downloadHandler(
-	  filename = "data.csv",
-	  content = function(file) {
-	    write.csv(ggplot_object$data, file)
-	  }
-	)
-	
-	shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
-	shinyjs::show("app-content")
+    output$btnDownloadCSV <- downloadHandler(
+      filename = "data.csv",
+      content = function(file) {
+        write.csv(ggplot_object$data, file)
+      }
+    )
+    
+    shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
+    shinyjs::show("app-content")
 })
