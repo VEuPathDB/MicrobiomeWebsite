@@ -270,7 +270,7 @@ shinyServer(function(input, output, session) {
       if(quantity_samples <= MAX_SAMPLES_NO_RESIZE | identical(plotRadio, "boxplot")){
         result_to_show<-plotlyOutput("allSamplesWrapper",
                                    width = paste0(WIDTH,"px"),
-                                   height = "500px"
+                                   height = "600px"
         )
       }else{
         h <- quantity_samples*MIN_HEIGHT_AFTER_RESIZE
@@ -512,7 +512,7 @@ shinyServer(function(input, output, session) {
       if(quantity_samples <= maximum_samples_without_resizing | identical(plotRadio, "boxplot") |
          identical("numeric",class(richness_merged[[category]]))){
         result_to_show<-plotlyOutput("byMetadataChartWrapper",
-                                  width = paste0(WIDTH,"px"), height = "500px"
+                                  width = paste0(WIDTH,"px"), height = "600px"
         )
       }else{
         h <- quantity_samples*MIN_HEIGHT_AFTER_RESIZE
