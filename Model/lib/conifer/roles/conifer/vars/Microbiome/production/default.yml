@@ -87,5 +87,5 @@ modelconfig_userDatasetStoreConfig: >
    <property name="zone">{{ modelconfig_userDatasetStoreConfig_irods_zone }}</property>
    <property name="rootPath">{{ modelconfig_userDatasetStoreConfig_irods_rootPath }}</property>
    <typeHandler type="example" version="1.0" implementation="org.gusdb.wdk.model.user.dataset.ExampleTypeHandler"/>
-   <typeHandler type=“BIOM” version=“1.0, 2.0, or 2.1" implementation=“org.apidb.apicommon.model.userdataset.BiomTypeHandler”/>
+   <typeHandler type="BIOM" version="1.0, 2.0, or 2.1" implementation="org.apidb.apicommon.model.userdataset.BiomTypeHandler"/>
   </userDatasetStore>
