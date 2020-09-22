@@ -31,8 +31,10 @@ node_modules/
 
 # Other version control
 .svn/
+.DS_Store
 
 #
 # Exported from svn:ignore
 #
 target
+.*~
