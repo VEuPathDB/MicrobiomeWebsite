@@ -8,7 +8,7 @@ modelconfig_adminEmail:
   - "{{ 'sfischer$pcbi.upenn.edu'|replace('$', '@') }}"
   - "{{ 'jtlong$upenn.edu'|replace('$', '@') }}"
 
-modelconfig_appDb_maxIdle: 10
+modelconfig_appDb_maxIdle: 1
 modelconfig_appDb_maxActive: 40
 modelconfig_userDb_maxIdle: 10
 modelconfig_commentdb.maxIdle: 10
