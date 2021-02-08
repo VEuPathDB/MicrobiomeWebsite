@@ -116,6 +116,9 @@ shinyServer(function(input, output, session) {
       
       richness_object <<- estimate_richness(phyloseq_obj, measures = all_measures)
       richness_object$SampleName <<- gsub("\\.", "\\-", rownames(richness_object))
+      if (all(grepl( "^X[0-9]+" , richness_object$SampleName))) {
+        richness_object$SampleName <<- gsub( "^X" , "", richness_object$SampleName)
+      }
       
     }
     
