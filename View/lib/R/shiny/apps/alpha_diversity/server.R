@@ -115,7 +115,7 @@ shinyServer(function(input, output, session) {
       phyloseq_obj <- mbiome2phyloseq(mstudy_obj, "Species")
       
       richness_object <<- estimate_richness(phyloseq_obj, measures = all_measures)
-      richness_object$SampleName <<- gsub("\\.", "\\-", rownames(richness_object))
+      richness_object$SampleName <<- rownames(sample_data(phyloseq_obj)) 
       
     }
     
