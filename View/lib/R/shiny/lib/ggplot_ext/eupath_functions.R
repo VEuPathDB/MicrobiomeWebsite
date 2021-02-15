@@ -13,6 +13,10 @@ fix_taxonomy_names <- function(taxonomy_df){
       }
     } 
   }
+  
+  #patch for unique species
+  taxonomy_df$Species <- make.unique(taxonomy_df$Species)
+
   taxonomy_df
 }
 
