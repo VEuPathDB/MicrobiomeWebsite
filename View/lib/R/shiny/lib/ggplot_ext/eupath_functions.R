@@ -15,7 +15,11 @@ fix_taxonomy_names <- function(taxonomy_df){
   }
   
   #patch for unique species
-  taxonomy_df$Species <- make.unique(taxonomy_df$Species)
+  if ('Species' %in% names(taxonomy_df)) {
+    taxonomy_df$Species <- make.unique(taxonomy_df$Species)
+  } else if ('Genus' %in% names(taxonomy_df)) {
+    taxonomy_df$Genus <- make.unique(taxonomy_df$Genus)
+  }
 
   taxonomy_df
 }
