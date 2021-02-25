@@ -91,31 +91,31 @@ shinyUI(
              )
            )
          ),# end tabPabel byTopOTU
-         tabPanel(
-           id="firstTab",
-           title = "Overview",
-           value = "bySample",
-           hidden(
-             div(id="chartLoading", style="text-align: center;",
-                 h5("Formatting plot..."),
-                 img(src = "spinner.gif", id = "loading-spinner")
-             )),
-           div(
-             id="overviewTabContent",
-               fluidRow(column(
-                 12,
-                 div(style = "position:relative",
-                     # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
-                       uiOutput("overviewChart"),
-                       # ),
-                     uiOutput("overviewTooltip"))
-               )),
-               fluidRow(column(
-                 12,
-                   dataTableOutput("overviewDatatable")
-               ))
-           )
-         ), # end tabPanel bySample
+        # tabPanel(
+        #   id="firstTab",
+        #   title = "Overview",
+        #   value = "bySample",
+        #   hidden(
+        #     div(id="chartLoading", style="text-align: center;",
+        #         h5("Formatting plot..."),
+        #         img(src = "spinner.gif", id = "loading-spinner")
+        #     )),
+        #   div(
+        #     id="overviewTabContent",
+        #       fluidRow(column(
+        #         12,
+        #         div(style = "position:relative",
+        #             # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
+        #               uiOutput("overviewChart"),
+        #               # ),
+        #             uiOutput("overviewTooltip"))
+        #       )),
+        #       fluidRow(column(
+        #         12,
+        #           dataTableOutput("overviewDatatable")
+        #       ))
+        #   )
+        # ), # end tabPanel bySample
          tabPanel(
            title = "Single Taxon",
            value = "byOTU",
