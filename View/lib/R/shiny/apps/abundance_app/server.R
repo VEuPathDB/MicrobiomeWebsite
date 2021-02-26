@@ -333,7 +333,8 @@ shinyServer(function(input, output, session) {
           }
           colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
           
-          data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
+	  data_frame_table[, 3] <- lapply(data_frame_table[, 3], round, 3)
+          # data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
           
           sketch <- tags$table(
             tags$thead(
@@ -364,7 +365,8 @@ shinyServer(function(input, output, session) {
             data_frame_table<-rbind(data_frame_table, df)
           }
           colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
-          data_frame_table[,4]<-format(data_frame_table[,4], scientific = F)
+          data_frame_table[, c(2,4)] <- lapply(data_frame_table[, c(2,4)], round, 3)
+	  # data_frame_table[,4]<-format(data_frame_table[,4], scientific = F)
           
           sketch <- tags$table(
             tags$thead(
