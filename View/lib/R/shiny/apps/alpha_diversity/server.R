@@ -144,7 +144,7 @@ shinyServer(function(input, output, session) {
   output$plotType <- renderUI({
     load_microbiome_data()
     if (is.null(properties)) {
-      mySelected <- "dotplot"
+      mySelected <- "boxplot"
     } else {
       mySelected <- properties$selected[properties$input == "input$plotTypeRadio"]
     }
