@@ -1,7 +1,7 @@
 OTUClass <- R6Class("OTUClass",
     private = list(
       summarized_otu = NULL,
-      summarized_means = NULL,
+      summarized_medians = NULL,
       last_taxonomy = "",
       use_relative_abundance = T,
       ordered_n_otu = NULL,
@@ -55,10 +55,10 @@ OTUClass <- R6Class("OTUClass",
         # end of workaroud for perfomance
         colnames(private$summarized_otu)<-c("SampleName", selected_levels, "Abundance")
 
-        private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
+        private$summarized_medians<-private$summarized_otu[,list(Abundance=median(Abundance)), by=taxonomy_level]
 
-        setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
-        private$ordered_all_otu <- private$summarized_means[[taxonomy_level]]
+        setorderv(private$summarized_medians, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
+        private$ordered_all_otu <- private$summarized_medians[[taxonomy_level]]
 
         self
       },
@@ -113,7 +113,7 @@ OTUClass <- R6Class("OTUClass",
           private$ordered_all_otu
         }else{
           if(n != length(private$ordered_n_otu)){
-            top_n <- head(private$summarized_means, n)
+            top_n <- head(private$summarized_medians, n)
             private$ordered_n_otu <- top_n[[private$last_taxonomy]]
           }
           private$ordered_n_otu
@@ -128,12 +128,12 @@ OTUClass <- R6Class("OTUClass",
         }
       },
 
-      get_top_n_by_mean = function(taxonomy_level=NULL, n=10, add_other=T){
+      get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T){
         if(!is.null(taxonomy_level) & !identical(taxonomy_level, private$last_taxonomy)){
           self$reshape(taxonomy_level = taxonomy_level)
         }
 
-        top_n <- head(private$summarized_means, n)
+        top_n <- head(private$summarized_medians, n)
         top_n$Abundance<-format(top_n$Abundance, scientific = F)
         private$ordered_n_otu <- top_n[[private$last_taxonomy]]
 

@@ -63,8 +63,8 @@ MicrobiomeData <- R6Class("MicrobiomeData",
          get_otus_by_level = function(taxonomy_level=NULL){
            self$otu_table$get_otus_by_level(taxonomy_level)
          },
-         get_top_n_by_mean = function(taxonomy_level=NULL, n=10, add_other=T){
-            self$otu_table$get_top_n_by_mean(taxonomy_level, n, add_other)
+         get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T){
+            self$otu_table$get_top_n_by_median(taxonomy_level, n, add_other)
          },
          get_single_otu = function(taxonomy_level=NULL, otu_name, add_other=F, keep_all=F){
            self$otu_table$get_single_otu(taxonomy_level, otu_name, add_other, keep_all)
