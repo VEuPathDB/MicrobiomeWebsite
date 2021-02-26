@@ -176,123 +176,123 @@ shinyServer(function(input, output, session) {
 
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-  allSamples <- function(){}
- 
-  output$allSamplesChart <- renderUI({
-    if (is.null(input$measure) | is.null(input$plotTypeRadio)) {
-      return()
-    }
+ # allSamples <- function(){}
+ #
+ # output$allSamplesChart <- renderUI({
+ #   if (is.null(input$measure) | is.null(input$plotTypeRadio)) {
+ #     return()
+ #   }
 
-    shinyjs::hide("allSamplesArea")
-    shinyjs::show("chartLoading")
-    
-    mstudy <- load_microbiome_data()
-    measure<-input$measure
-    plotRadio <- input$plotTypeRadio
-    quantity_samples <- mstudy$get_sample_count()
-    result_to_show<-NULL
-    
-    if(identical(measure,"") | is.na(measure) | !(measure %in% all_measures) ){
-      output$allSamplesDt <- renderDataTable(NULL)
-      result_to_show<-h5(class="alert alert-danger", "Please choose at least one alpha diversity measure.")
-    }else{
-      
-      if(identical(measure, "Chao1")){
-        se <- "se.chao1"
-        rich <- richness_object[,c("SampleName", measure,se)]
-      }else if(identical(measure, "ACE")){
-        se <- "se.ACE"
-        rich <- richness_object[,c("SampleName", measure,se)]
-      }else{
-        rich <- richness_object[,c("SampleName", measure)]
-        se = NULL
-      }
-      
-      rich$SampleName<-factor(rich$SampleName, levels=rich$SampleName)
-      data_melted<-melt(rich, id.vars = c("SampleName"),  measure.vars=measure)
-      
-      if(!is.null(se)){
-        se_melted <-melt(rich, id.vars = c("SampleName"),  measure.vars=se)
-        se_melted[,"variable"]<-measure
-        colnames(se_melted)<-c("SampleName", "variable", "se")
-        data_melted<-merge(data_melted,se_melted,by=c("SampleName", "variable"), all.x=T)
-      }else{
-        data_melted$se<-0 # see if this is necessary
-      }
-      
-      if(identical(plotRadio, "dotplot")){
-        chart <- ggplot(data_melted, aes_string(x="value", y="SampleName"))+
-          geom_point(shape = 21, alpha=1, colour = "grey", fill = "black", size = 3, stroke = 1.5)+
-          theme_eupath_default(
-            panel.border = element_rect(colour="black", size=1, fill=NA),
-            axis.text.y = element_text(size=rel(0.9))
-          )+
-          labs(x="Alpha Diversity",  y="Samples")
-        
-        if(!is.null(se)){
-          chart<-chart+geom_errorbarh(aes(xmax=value + se, xmin=value - se), height = .1)
-        }
-          
-      } # end if is dotplot
-      else{
-        chart<-ggplot(data_melted, aes(variable, value))+geom_boxplot()+
-          theme_eupath_default(
-            panel.border = element_rect(colour="black", size=1, fill=NA),
-            axis.text.x = element_blank(),
-            axis.ticks.x =  element_blank()
-          )+
-          labs(x="All Samples", y="Alpha Diversity")
-      }
-      
-      
-      
-      
-      ggplot_object <<- chart
-      ggplot_build_object <<- ggplot_build(chart)
-      
-      output$allSamplesWrapper<-renderPlotly({
-        ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
-      })
-      
-      if(is.null(se)){
-        colnames(rich)<-c("Sample Name", measure)
-      }else{
-        colnames(rich)<-c("Sample Name", measure, "Std. Error")
-      }
-      
-      output$allSamplesDt = renderDataTable(
-        rich,
-        options = list(
-          order = list(list(0, 'asc'))
-        )
-      )
-      
-      if(quantity_samples <= MAX_SAMPLES_NO_RESIZE | identical(plotRadio, "boxplot")){
-        result_to_show<-plotlyOutput("allSamplesWrapper",
-                                   width = paste0(WIDTH,"px"),
-                                   height = "600px"
-        )
-      }else{
-        h <- quantity_samples*MIN_HEIGHT_AFTER_RESIZE
-        if(h>2500){
-          h<-2500
-        }
-        result_to_show<-plotlyOutput("allSamplesWrapper",
-                                   width = paste0(WIDTH,"px"),
-                                   # width = "100%",
-                                   height = h
-        )
-      }
-      
-      
-      
-    }
-    
-    shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
-    shinyjs::show("allSamplesArea")
-    return(result_to_show)
-  })
-  
+ #   shinyjs::hide("allSamplesArea")
+ #   shinyjs::show("chartLoading")
+ #   
+ #   mstudy <- load_microbiome_data()
+ #   measure<-input$measure
+ #   plotRadio <- input$plotTypeRadio
+ #   quantity_samples <- mstudy$get_sample_count()
+ #   result_to_show<-NULL
+ #   
+ #   if(identical(measure,"") | is.na(measure) | !(measure %in% all_measures) ){
+ #     output$allSamplesDt <- renderDataTable(NULL)
+ #     result_to_show<-h5(class="alert alert-danger", "Please choose at least one alpha diversity measure.")
+ #   }else{
+ #     
+ #     if(identical(measure, "Chao1")){
+ #       se <- "se.chao1"
+ #       rich <- richness_object[,c("SampleName", measure,se)]
+ #     }else if(identical(measure, "ACE")){
+ #       se <- "se.ACE"
+ #       rich <- richness_object[,c("SampleName", measure,se)]
+ #     }else{
+ #       rich <- richness_object[,c("SampleName", measure)]
+ #       se = NULL
+ #     }
+ #     
+ #     rich$SampleName<-factor(rich$SampleName, levels=rich$SampleName)
+ #     data_melted<-melt(rich, id.vars = c("SampleName"),  measure.vars=measure)
+ #     
+ #     if(!is.null(se)){
+ #       se_melted <-melt(rich, id.vars = c("SampleName"),  measure.vars=se)
+ #       se_melted[,"variable"]<-measure
+ #       colnames(se_melted)<-c("SampleName", "variable", "se")
+ #       data_melted<-merge(data_melted,se_melted,by=c("SampleName", "variable"), all.x=T)
+ #     }else{
+ #       data_melted$se<-0 # see if this is necessary
+ #     }
+ #     
+ #     if(identical(plotRadio, "dotplot")){
+ #       chart <- ggplot(data_melted, aes_string(x="value", y="SampleName"))+
+ #         geom_point(shape = 21, alpha=1, colour = "grey", fill = "black", size = 3, stroke = 1.5)+
+ #         theme_eupath_default(
+ #           panel.border = element_rect(colour="black", size=1, fill=NA),
+ #           axis.text.y = element_text(size=rel(0.9))
+ #         )+
+ #         labs(x="Alpha Diversity",  y="Samples")
+ #       
+ #       if(!is.null(se)){
+ #         chart<-chart+geom_errorbarh(aes(xmax=value + se, xmin=value - se), height = .1)
+ #       }
+ #         
+ #     } # end if is dotplot
+ #     else{
+ #       chart<-ggplot(data_melted, aes(variable, value))+geom_boxplot()+
+ #         theme_eupath_default(
+ #           panel.border = element_rect(colour="black", size=1, fill=NA),
+ #           axis.text.x = element_blank(),
+ #           axis.ticks.x =  element_blank()
+ #         )+
+ #         labs(x="All Samples", y="Alpha Diversity")
+ #     }
+ #     
+ #     
+ #     
+ #     
+ #     ggplot_object <<- chart
+ #     ggplot_build_object <<- ggplot_build(chart)
+ #     
+ #     output$allSamplesWrapper<-renderPlotly({
+ #       ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
+ #     })
+ #     
+ #     if(is.null(se)){
+ #       colnames(rich)<-c("Sample Name", measure)
+ #     }else{
+ #       colnames(rich)<-c("Sample Name", measure, "Std. Error")
+ #     }
+ #     
+ #     output$allSamplesDt = renderDataTable(
+ #       rich,
+ #       options = list(
+ #         order = list(list(0, 'asc'))
+ #       )
+ #     )
+ #     
+ #     if(quantity_samples <= MAX_SAMPLES_NO_RESIZE | identical(plotRadio, "boxplot")){
+ #       result_to_show<-plotlyOutput("allSamplesWrapper",
+ #                                  width = paste0(WIDTH,"px"),
+ #                                  height = "600px"
+ #       )
+ #     }else{
+ #       h <- quantity_samples*MIN_HEIGHT_AFTER_RESIZE
+ #       if(h>2500){
+ #         h<-2500
+ #       }
+ #       result_to_show<-plotlyOutput("allSamplesWrapper",
+ #                                  width = paste0(WIDTH,"px"),
+ #                                  # width = "100%",
+ #                                  height = h
+ #       )
+ #     }
+ #     
+ #     
+ #     
+ #   }
+ #   
+ #   shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
+ #   shinyjs::show("allSamplesArea")
+ #   return(result_to_show)
+ # })
+ # 
   byMetadata <- function(){}
   output$byMetadataChart <- renderUI({
     mstudy <- load_microbiome_data()
