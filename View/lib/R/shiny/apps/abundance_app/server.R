@@ -238,7 +238,7 @@ shinyServer(function(input, output, session) {
           }
           colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
           
-	  data_frame_table[, 3] <- lapply(data_frame_table[, 3], round, 3)
+	  data_frame_table[, 3] <- round(data_frame_table[, 3], 3)
           
           sketch <- tags$table(
             tags$thead(
@@ -269,7 +269,7 @@ shinyServer(function(input, output, session) {
             data_frame_table<-rbind(data_frame_table, df)
           }
           colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
-          data_frame_table[, c(2,4)] <- lapply(data_frame_table[, c(2,4)], round, 3)
+          data_frame_table[, c(2,4)] <- round(data_frame_table[, c(2,4)], 3)
           
           sketch <- tags$table(
             tags$thead(
