@@ -125,12 +125,12 @@ shinyServer(function(input, output, session) {
     
     taxon_level <- input$taxonLevel
     if(!identical(taxon_level, "")){
-      output$overviewDatatable <- renderDataTable(NULL)
+      
       global_otus <<- mstudy$get_otus_by_level(taxon_level)
       selected_levels <<- get_columns_taxonomy(taxon_level)
       
       hash_colors <<- eupath_pallete
-      top_ten<-mstudy$get_top_n_by_mean(taxon_level, NUMBER_TAXA)
+      top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA)
       ordered<-c(mstudy$otu_table$get_ordered_otu(NUMBER_TAXA))
       rev_ordered<-c("Other", rev(ordered))
       names(hash_colors) <<- rev_ordered
@@ -153,101 +153,6 @@ shinyServer(function(input, output, session) {
     }
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
   
-  overviewChart <- function(){}
-  
-  output$overviewChart <- renderUI({
-    mstudy <- load_microbiome_data()
-    category<-input$category
-    taxon_level<-input$taxonLevel
-    result_to_show<-NULL
-    if(!identical(input$category, "")){
-      shinyjs::hide("divContent")
-      shinyjs::show("chartLoading")
-      quantity_samples <- mstudy$get_sample_count()
-      #TODO test for input without 10 different taxa
-      top_ten<-mstudy$get_top_n_by_mean(taxon_level, NUMBER_TAXA)
-      ordered<-c(mstudy$otu_table$get_ordered_otu(NUMBER_TAXA))
-      rev_ordered<-c("Other", rev(ordered))
-      wrapped_labels<-wrap_column(rev_ordered)
-      top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=rev_ordered)
-      if(identical(category, NO_METADATA_SELECTED)){
-        chart<-ggplot(top_ten, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
-          geom_bar(stat="identity", position="stack", color="black")+
-          theme_eupath_default(
-            legend.title.align=0.4,
-            legend.title = element_text(colour="black", size=rel(1), face="bold"),
-            axis.text.y=element_blank(),
-            axis.ticks.y = element_blank()
-          )+
-          scale_fill_manual(values=eupath_pallete, name=taxon_level,
-                            labels = c(wrapped_labels),
-                            guide = guide_legend(reverse=TRUE, keywidth = 1.7, keyheight = 1.7)
-                          )+
-          labs(x="Samples", y="Phylogenetic Relative Abundance")+
-          coord_flip(expand=F)
-      }else{
-        dt_metadata<-mstudy$get_metadata_as_column(category)
-        dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
-      
-        #colnames(dt_metadata)[2] <- make.names(category)
-        col_renamed <- make.names(category)
-        all_columns <- colnames(dt_metadata)
-        all_columns[2]<-col_renamed
-        colnames(dt_metadata)<-all_columns
-        
-        #check for numeric category and bin
-        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
-        if (is.numeric(dt_metadata[[col_renamed]])) {
-	  if (uniqueN(dt_metadata[[col_renamed]]) > 10) {
-            dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
-	  } else {
-	    dt_metadata[[col_renamed]] <- as.factor(dt_metadata[[col_renamed]])
-	  }
-        } else if (is.character(dt_metadata[[col_renamed]])) {
-          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
-        } 
-
-        chart<-ggplot(dt_metadata, aes_string(x="SampleName", y="Abundance", fill=taxon_level))+
-          geom_bar(stat="identity", position="stack", color="black")+
-	  facet_wrap(as.formula(paste("~ ",col_renamed)), ncol=1, scales='free_y')+
-          #facet_grid(rows = col_renamed, scales='free_y', space='free_y')+
-	  theme(panel.spacing = unit(-.85, "lines")) +
-          theme_eupath_default(
-            legend.title.align=0.4,
-            legend.title = element_text(colour="black", size=rel(1), face="bold"),
-            axis.text.y=element_blank(),
-            axis.ticks.y = element_blank()
-          )+
-          scale_fill_manual(values=eupath_pallete, name=taxon_level,
-                            labels = c(wrapped_labels),
-                            guide = guide_legend(reverse=TRUE, keywidth = 1.7, keyheight = 1.7)
-          )+
-          labs(x="Samples", y="Phylogenetic Relative Abundance")+
-          coord_flip(expand=F)
-      }
-      
-      ggplot_object<<-chart
-      ggplot_build_object<<-ggplot_build(chart)
-
-      output$plotWrapper<-renderPlotly({
-        ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
-      })
-      
-      if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
-        result_to_show<-plotlyOutput("plotWrapper",
-               width = paste0(WIDTH,"px"), height = "500px"
-             )
-      }else{
-        result_to_show<-plotlyOutput("plotWrapper",
-           height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE
-         )
-      }
-      shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
-      shinyjs::show("divContent")
-    }
-    result_to_show
-  })
-  
 
   topAbundance <- function(){}
 
@@ -265,7 +170,7 @@ shinyServer(function(input, output, session) {
       
       quantity_samples <- mstudy$get_sample_count()
       
-      top_ten<-mstudy$get_top_n_by_mean(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
+      top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
                                         add_other = F)
       
       ordered<-mstudy$otu_table$get_ordered_otu(NUMBER_TAXA)
@@ -333,7 +238,7 @@ shinyServer(function(input, output, session) {
           }
           colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
           
-          data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
+	  data_frame_table[, 3] <- round(data_frame_table[, 3], 3)
           
           sketch <- tags$table(
             tags$thead(
@@ -364,7 +269,7 @@ shinyServer(function(input, output, session) {
             data_frame_table<-rbind(data_frame_table, df)
           }
           colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
-          data_frame_table[,4]<-format(data_frame_table[,4], scientific = F)
+          data_frame_table[, c(2,4)] <- round(data_frame_table[, c(2,4)], 3)
           
           sketch <- tags$table(
             tags$thead(

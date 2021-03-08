@@ -63,7 +63,7 @@ shinyServer(function(input, output, session) {
 
     }
 
-    otus<-mstudy_obj$get_otus_by_level(input$taxonLevel)
+    
     cor_type<-input$corType
     taxon_level<-input$taxonLevel
     if(identical(cor_type, "tm")){

@@ -1,6 +1,7 @@
 OTUClass <- R6Class("OTUClass",
     private = list(
       summarized_otu = NULL,
+      summarized_medians = NULL,
       summarized_means = NULL,
       last_taxonomy = "",
       use_relative_abundance = T,
@@ -55,10 +56,13 @@ OTUClass <- R6Class("OTUClass",
         # end of workaroud for perfomance
         colnames(private$summarized_otu)<-c("SampleName", selected_levels, "Abundance")
 
+        private$summarized_medians<-private$summarized_otu[,list(Abundance=median(Abundance)), by=taxonomy_level]
+
         private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
 
+        setorderv(private$summarized_medians, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
         setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
-        private$ordered_all_otu <- private$summarized_means[[taxonomy_level]]
+        private$ordered_all_otu <- private$summarized_medians[[taxonomy_level]]
 
         self
       },
@@ -113,7 +117,7 @@ OTUClass <- R6Class("OTUClass",
           private$ordered_all_otu
         }else{
           if(n != length(private$ordered_n_otu)){
-            top_n <- head(private$summarized_means, n)
+            top_n <- head(private$summarized_medians, n)
             private$ordered_n_otu <- top_n[[private$last_taxonomy]]
           }
           private$ordered_n_otu
@@ -126,6 +130,28 @@ OTUClass <- R6Class("OTUClass",
         }else{
           self$get_ordered_otu()
         }
+      },
+
+      get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T){
+        if(!is.null(taxonomy_level) & !identical(taxonomy_level, private$last_taxonomy)){
+          self$reshape(taxonomy_level = taxonomy_level)
+        }
+
+        top_n <- head(private$summarized_medians, n)
+        top_n$Abundance<-format(top_n$Abundance, scientific = F)
+        private$ordered_n_otu <- top_n[[private$last_taxonomy]]
+
+        filtered_ten<-subset(private$summarized_otu,
+                             get(private$last_taxonomy)%chin%top_n[[private$last_taxonomy]] )
+
+        if(add_other){
+          grouped_dt<-filtered_ten[,list(Abundance=sum(Abundance)),by="SampleName"]
+          grouped_dt[,Abundance:=1-Abundance]
+          grouped_dt[,get_columns_taxonomy(private$last_taxonomy):="Other"]
+          setcolorder(grouped_dt, colnames(filtered_ten))
+          filtered_ten <- rbindlist(list(filtered_ten,  grouped_dt))
+        }
+        filtered_ten
       },
 
       get_top_n_by_mean = function(taxonomy_level=NULL, n=10, add_other=T){
