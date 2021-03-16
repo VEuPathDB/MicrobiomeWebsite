@@ -21,9 +21,6 @@ shinyServer(function(input, output, session) {
   df_abundance <- NULL
   df_sample <- NULL
   df_sample.formatted <- NULL
-  category <- NULL
-  factor1 <- NULL
-  factor2 <- NULL
   
   # global objects to read in more than one function
   columns <- NULL
@@ -50,12 +47,13 @@ shinyServer(function(input, output, session) {
   propUrl <- NULL
   properties <- NULL
 
-  ## Load properties
+  ## Load properties/propUrl
   load_properties <- reactive({
+    
     if(is.null(propUrl)) {
       propUrl <<- getPropertiesUrl(session)
       properties <<- try(fread(propUrl))
-      logjs("propURL")
+      
 
       if (length(properties) > 0) {
         if (grepl("Error", properties)) {
@@ -205,6 +203,9 @@ shinyServer(function(input, output, session) {
   #to use propUrl, need to create all ui from server file.
   output$taxonLevel <- renderUI({
 
+    # Load properties/propUrl
+    load_properties()
+
     # Load df_abundance as the app starts up.
     load_df_abundance()
 
@@ -238,8 +239,10 @@ shinyServer(function(input, output, session) {
                    "input$factor2\t", input$factor2
             )
     logjs("PUT")
-    # PUT(propUrl, body = "")
-    # PUT(propUrl, body = text)
+    logjs(text)
+    logjs(propUrl)
+    PUT(url=propUrl, body = "")
+    PUT(propUrl, body = text)
 
     # On any variable change, clear input error message.
     output$InputErrors <- NULL
