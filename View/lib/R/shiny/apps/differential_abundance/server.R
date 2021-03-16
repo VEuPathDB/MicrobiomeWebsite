@@ -86,7 +86,6 @@ shinyServer(function(input, output, session) {
       # Set row and column names
       rownames(df_sample.formatted) <<- df_sample.formatted[,1]
       columns <<- colnames(df_sample.formatted)
-      logjs(columns)
       corrected_columns <-  make.names(columns)
       colnames(df_sample.formatted) <<- corrected_columns
       names(corrected_columns) <- columns
@@ -230,17 +229,13 @@ shinyServer(function(input, output, session) {
                input$category
                input$factor1
                input$factor2}, {
-    logjs(input$category)
-    logjs(input$factor1)
+    
     text <- paste0("input\tselected\n",
                    "input$taxonLevel\t", input$taxonLevel, "\n",
                    "input$category\t", input$category, "\n",
                    "input$factor1\t", input$factor1, "\n",
                    "input$factor2\t", input$factor2
             )
-    logjs("PUT")
-    logjs(text)
-    logjs(propUrl)
     PUT(url=propUrl, body = "")
     PUT(propUrl, body = text)
 
@@ -341,21 +336,12 @@ shinyServer(function(input, output, session) {
 
     # set initial resulttoshow
     result_to_show <- NULL
-
-    ###### If all null, tell user to pick better inputs
-    logjs(category)
-    logjs(factor1)
-    logjs(factor2)
-    logjs(taxon_level)
-    
+ 
     # If the Go button has been pressed (even before choosing all inputs), validate inputs
     if(input$go){
-      logjs("Pre-button")
-      logjs("validating inputs")
 
       # Ensure category is not empty
       if(identical(category,"")){
-        logjs("invalid!!!")
         output$InputErrors <- renderUI(
             h5(class="alert alert-warning", "Please choose a design parameter.")
           )
@@ -380,9 +366,6 @@ shinyServer(function(input, output, session) {
 
 
     # Based on inputs, generate phyloseq object
-    logjs("Casting data")
-
-    logjs(taxon_level)
 
     if(identical(taxon_level, "Phylum")){
       df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
@@ -428,11 +411,9 @@ shinyServer(function(input, output, session) {
     
     hash_colors<<-NULL
 
-    logjs("Data cast")
 
     # Run DESeq
     deseq_result <- runDeseq()
-    logjs("DESeq complete")
 
     # Plot DESeq output (if one exists!)
     if(!is.null(deseq_result)){
@@ -494,9 +475,6 @@ runDeseq <- eventReactive(input$go, {
       factor2<-input$factor2
       taxon_level <- input$taxonLevel
     })
-
-
-    logjs("Running DESeq...")
 
     
     deseq_output<-NULL
