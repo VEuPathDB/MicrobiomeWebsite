@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 library(ggplot2)
 source("../../functions/wdkDataset.R")
 library(phyloseq)
@@ -194,7 +195,62 @@ shinyServer(function(input, output, session) {
 
   }) # end load_df_abundance
    
-  
+
+   # Using the already loaded data, prep data for DESeq based on taxonLevel
+  prepForDeseq <- reactive({
+
+    taxon_level <- input$taxonLevel
+
+    # Format abundance data based on the input
+    if(identical(taxon_level, "Phylum")){
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 3
+      column_tax <- 2
+    }else if(identical(taxon_level, "Class")){
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 4
+      column_tax <- 3
+    }else if(identical(taxon_level, "Order")){
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 5
+      column_tax <- 4
+    }else if(identical(taxon_level, "Family")){
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 6
+      column_tax <- 5
+    }else if(identical(taxon_level, "Genus")){
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 7
+      column_tax <- 6
+    }else{
+      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
+      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
+      column_otu <- 8
+      column_tax <- 7
+    }
+    
+    # output$by_sample_datatable <- renderDataTable(NULL)
+    abundance_otu <<- df_abundance.formatted[,column_otu:ncol(df_abundance.formatted)]
+    abundance_otu_relative <<- df_abundance_form_relative[,column_otu:ncol(df_abundance.formatted)]
+    OTU <<- otu_table(abundance_otu, taxa_are_rows = T)
+    
+    abundance_taxa <<- df_abundance.formatted[,1:column_tax]
+    abundance_taxa <<- fix_taxonomy_names(abundance_taxa)
+    
+    TAX <<- tax_table(as.matrix(abundance_taxa))
+    
+    hash_colors<<-NULL
+
+    # The following are not used -- marking for later deletion
+    # merged_phyloseq <- phyloseq(OTU, TAX, SAMPLE)
+    # merged_phyloseq
+  })  # End prepForDeseq function
+ 
 
   observeFunctions <- function(){}
   
@@ -309,10 +365,9 @@ shinyServer(function(input, output, session) {
   })
 
 
-  ## Render main chart. Contains functions listening to Generate Plot button press
+  
+  # Render main chart. Contains functions listening to Generate Plot button press
   output$mainChart <- renderUI({
-
-    load_df_abundance()
 
     # Create plot after using DESeq to calculate differential abundance.
     generatePlot()
@@ -320,7 +375,47 @@ shinyServer(function(input, output, session) {
   })
 
 
-  ## Calculate DESeq and generate plot on button press
+  # Reactive function that ensures inputs are appropriate and prints error messages if not.
+  validate_inputs <- reactive({
+
+    category <- input$category
+    factor1 <- input$factor1
+    factor2 <- input$factor2
+    taxon_level <- input$taxonLevel
+
+    # Wait until button is pressed a first time before running.
+    if(input$go){
+
+      # Ensure category is not empty
+      if(identical(category,"")){
+
+        output$InputErrors <- renderUI(
+            h5(class="alert alert-warning", "Please choose a design parameter.")
+          )
+        return(FALSE)
+      }
+
+      # Ensure factors are not identical or nonsense.
+      if(identical(factor1, factor2) | (identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1")) ){
+          output$datatableOutput<-renderDataTable(NULL)
+          shinyjs::disable("btnDownloadPNG")
+          shinyjs::disable("btnDownloadSVG")
+          shinyjs::disable("btnDownloadEPS")
+          shinyjs::disable("btnDownloadCSV")
+          output$InputErrors <- renderUI(
+            h5(class="alert alert-warning", "Please choose different factors.")
+          )
+
+          return(FALSE)
+      }
+
+      return(TRUE)
+    }
+
+  })
+
+
+  # Create plot on button press
   generatePlot <- reactive({
     
     # Read inputs
@@ -336,138 +431,54 @@ shinyServer(function(input, output, session) {
 
     # set initial resulttoshow
     result_to_show <- NULL
- 
-    # If the Go button has been pressed (even before choosing all inputs), validate inputs
-    if(input$go){
-
-      # Ensure category is not empty
-      if(identical(category,"")){
-        output$InputErrors <- renderUI(
-            h5(class="alert alert-warning", "Please choose a design parameter.")
-          )
-        return()
-      }
-
-      # Ensure factors are not identical or nonsense.
-      if(identical(factor1, factor2) | (identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1")) ){
-          output$datatableOutput<-renderDataTable(NULL)
-          shinyjs::disable("btnDownloadPNG")
-          shinyjs::disable("btnDownloadSVG")
-          shinyjs::disable("btnDownloadEPS")
-          shinyjs::disable("btnDownloadCSV")
-          output$InputErrors <- renderUI(
-            h5(class="alert alert-warning", "Please choose different factors.")
-          )
-
-          return()
-      }
-    }
 
 
-
-    # Based on inputs, generate phyloseq object
-
-    if(identical(taxon_level, "Phylum")){
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 3
-      column_tax <- 2
-    }else if(identical(taxon_level, "Class")){
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 4
-      column_tax <- 3
-    }else if(identical(taxon_level, "Order")){
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 5
-      column_tax <- 4
-    }else if(identical(taxon_level, "Family")){
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 6
-      column_tax <- 5
-    }else if(identical(taxon_level, "Genus")){
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 7
-      column_tax <- 6
-    }else{
-      df_abundance.formatted <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "AbsoluteAbundance")
-      df_abundance_form_relative <- dcast(data = df_abundance,formula = Kingdom+Phylum+Class+Order+Family+Genus+Species~Sample,fun.aggregate = sum,value.var = "RelativeAbundance")
-      column_otu <- 8
-      column_tax <- 7
-    }
-    
-    # output$by_sample_datatable <- renderDataTable(NULL)
-    abundance_otu <<- df_abundance.formatted[,column_otu:ncol(df_abundance.formatted)]
-    abundance_otu_relative <<- df_abundance_form_relative[,column_otu:ncol(df_abundance.formatted)]
-    OTU <<- otu_table(abundance_otu, taxa_are_rows = T)
-    
-    abundance_taxa <<- df_abundance.formatted[,1:column_tax]
-    abundance_taxa <<- fix_taxonomy_names(abundance_taxa)
-    
-    TAX <<- tax_table(as.matrix(abundance_taxa))
-    
-    hash_colors<<-NULL
+      # Run DESeq
+      deseq_result <- runDeseq()
 
 
-    # Run DESeq
-    deseq_result <- runDeseq()
+      # Plot DESeq output (if one exists!)
+      if(!is.null(deseq_result)){
 
-    # Plot DESeq output (if one exists!)
-    if(!is.null(deseq_result)){
-
-      # the x axis will be from -max_fold_change to +max_fold_change
-      max_fold_change<-max(abs(deseq_result$log2FoldChange))
-      category_column <- hash_count_samples[[category]]
-      limits_plot<-c(levels(deseq_result[[taxon_level]]),"","")
-      
-      chart<-ggplot(deseq_result, aes_string(x="log2FoldChange", y=taxon_level, color="Phylum")) +
-        xlim(-max_fold_change, max_fold_change)+
-        # ylim(0, nrow(deseq_result)+1.5)+
-        geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
-        geom_point(aes(size = log10(0.5+1/pvalue)))+
-        scale_size(range = c(3, 9), guide = 'none')+
-        # theme_eupath(legend.position = "right", legend.direction="vertical")+
-        theme_eupath(legend.position = "bottom")+
-        scale_y_discrete(position = "right", limits=limits_plot, breaks = levels(deseq_result[[taxon_level]]) )+
-        guides(colour = guide_legend(override.aes = list(size=8)))
+        # the x axis will be from -max_fold_change to +max_fold_change
+        max_fold_change<-max(abs(deseq_result$log2FoldChange))
+        category_column <- hash_count_samples[[category]]
+        limits_plot<-c(levels(deseq_result[[taxon_level]]),"","")
+        
+        chart<-ggplot(deseq_result, aes_string(x="log2FoldChange", y=taxon_level, color="Phylum")) +
+          xlim(-max_fold_change, max_fold_change)+
+          # ylim(0, nrow(deseq_result)+1.5)+
+          geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
+          geom_point(aes(size = log10(0.5+1/pvalue)))+
+          scale_size(range = c(3, 9), guide = 'none')+
+          # theme_eupath(legend.position = "right", legend.direction="vertical")+
+          theme_eupath(legend.position = "bottom")+
+          scale_y_discrete(position = "right", limits=limits_plot, breaks = levels(deseq_result[[taxon_level]]) )+
+          guides(colour = guide_legend(override.aes = list(size=8)))
+            
+          ggplot_object<<-chart
           
-        ggplot_object<<-chart
-        
-        ggplot_build_object<<-ggplot_build(chart)
-        shinyjs::enable("btnDownloadPNG")
-        shinyjs::enable("btnDownloadSVG")
-        shinyjs::enable("btnDownloadEPS")
-        shinyjs::enable("btnDownloadCSV")
-        
-        output$plotWrapper<-renderPlotly({
-          ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
-        })
-        
-        result_to_show<-plotlyOutput("plotWrapper")
-        
-    }else{ 
-        # No plot was returned so disable downloads and alert the user.
-        shinyjs::disable("btnDownloadPNG")
-        shinyjs::disable("btnDownloadSVG")
-        shinyjs::disable("btnDownloadEPS")
-        shinyjs::disable("btnDownloadCSV")
-        logjs("input error!")
-        output$InputErrors <- renderUI(
-          h5(class="alert alert-warning", "Sorry, but there is no OTU with differential abundance using your search parameters.")
-        )
-    } # End if deseq_result not null
+          ggplot_build_object<<-ggplot_build(chart)
+          shinyjs::enable("btnDownloadPNG")
+          shinyjs::enable("btnDownloadSVG")
+          shinyjs::enable("btnDownloadEPS")
+          shinyjs::enable("btnDownloadCSV")
+          
+          output$plotWrapper<-renderPlotly({
+            ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
+          })
+          
+          result_to_show<-plotlyOutput("plotWrapper")
+          
+      }
 
     result_to_show
 
-  }) # end generatePlot()
+  })
 
 
-
-## On button press, calculate differential abundance with DESeq
-runDeseq <- eventReactive(input$go, {
+  # On button press, validate inputs, prepare data for DESeq, and run DESeq
+  runDeseq <- eventReactive(input$go, {
 
     isolate({
       category<-input$category
@@ -476,96 +487,121 @@ runDeseq <- eventReactive(input$go, {
       taxon_level <- input$taxonLevel
     })
 
-    
-    deseq_output<-NULL
-    shinyjs::hide("chartContent")
-    shinyjs::show("chartLoading")
+    deseq_output <- NULL
 
-    # Slice data based on factor choices and run DESeq
-    if(!identical(factor1, factor2) &  !(identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1") ) ){
-      category_column <- hash_sample_names[[hash_count_samples[[category]]]]
-      
-      df_sample_filter <- SAMPLE[,category_column]
-      
-      if(identical(factor2, "Not Factor 1")){
-        df_sample_filter[df_sample_filter[,category_column]!=factor1,category_column]<-"Not Factor 1"
-      }else if(identical(factor1, "Not Factor 2")){
-        df_sample_filter[df_sample_filter[,category_column]!=factor2,category_column]<-"Not Factor 2"
-      }else{
-        df_sample_filter<-df_sample_filter[df_sample_filter[,category_column]==factor1 | df_sample_filter[,category_column]==factor2]
-      } # end factor check
-      
-      # Craete new phyloseq from sample filter
-      new_physeq_obj<-phyloseq(OTU, TAX, sample_data(df_sample_filter))
-      # new_physeq_obj <- subset_samples(new_physeq_obj, !is.na(category_column))
-      new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj)
-      
-      # creating factor with levels in the same order as the select input factors
-      sample_data(new_physeq_obj)[[category_column]] <- factor(sample_data(new_physeq_obj)[[category_column]], levels=c(factor1,factor2))
-      diagdds = phyloseq2Deseq2(new_physeq_obj, as.formula(paste0("~", category_column)))
-      
-      # calculate geometric means prior to estimate size factors
-      gm_mean = function(x, na.rm=TRUE){
-        exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
-      }
-      
-      geoMeans = apply(counts(diagdds), 1, gm_mean)
-      diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
-      diagdds = DESeq(diagdds, fitType="local", quiet=T)
+    inputs_validated <- validate_inputs()
 
-      #investigating test result
-      res = results(diagdds)
-      
-      res = res[order(res$padj, na.last=NA), ]
-      alpha = 0.01
-      sigtab = res[(res$padj < alpha), ]
-      
-      if(nrow(sigtab)>0){
-        sigtab = cbind(as(sigtab, "data.frame"), as(TAX[rownames(sigtab), ], "matrix"))
+    if (inputs_validated) {
+
+
+      shinyjs::hide("chartContent")
+      shinyjs::show("chartLoading")
+
+      # Prepare data for DESeq based on inputs
+      prepForDeseq()
+
+
+
+      if(!identical(factor1, factor2) &  !(identical(factor1, "Not Factor 2") & identical(factor2, "Not Factor 1") ) ){
+        category_column <- hash_sample_names[[hash_count_samples[[category]]]]
         
-        sigtab<-sigtab[order(sigtab$log2FoldChange),]
-        sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
-	
-        rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level], paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]))
+        df_sample_filter <- SAMPLE[,category_column]
 
-        myOTU <- as.data.frame(t(abundance_otu_relative))
-        myOTU$sampleName <- rownames(t(abundance_otu_relative))
-        samdata <- data.frame(sample_data(new_physeq_obj))
-        samdata$sampleName <- rownames(samdata)
-        samdata[, category_column] <- paste("Median abundance", as.character(samdata[, category_column]))
-        data <- merge(samdata, myOTU, by = 'sampleName') 
-        data <- data %>%
-            group_by(get(category_column)) %>%
-          summarise_at(vars(-sampleName), funs(median(as.numeric(.), na.rm = TRUE)))
-        data[,2] <- data[,1]
-        names <- data[,category_column]
-        data <- t(data[3:length(data)])
-        colnames(data) <- unlist(names)
-        data <- as.data.frame.matrix(data)
-        data[[taxon_level]] <- rownames(data)
-              cols_to_show<-sigtab[,c("baseMean", "log2FoldChange", "pvalue", taxon_level)]
-        cols_to_show <- merge(cols_to_show, data, by=taxon_level)
-	       
- 
-        output$datatableOutput<-renderDataTable(cols_to_show,
-                                                options = list(
-                                                  order = list(list(1, 'desc'))
-                                                )
-        )
-        # log data transformation by https://stats.stackexchange.com/questions/83914/how-to-log-transform-data-with-a-large-number-of-zeros
-        deseq_output<-sigtab
-      }else{
-        output$datatableOutput<-renderDataTable(NULL)
+        
+        if(identical(factor2, "Not Factor 1")){
+          df_sample_filter[df_sample_filter[,category_column]!=factor1,category_column]<-"Not Factor 1"
+        }else if(identical(factor1, "Not Factor 2")){
+          df_sample_filter[df_sample_filter[,category_column]!=factor2,category_column]<-"Not Factor 2"
+        }else{
+          df_sample_filter<-df_sample_filter[df_sample_filter[,category_column]==factor1 | df_sample_filter[,category_column]==factor2]
+        } # end factor check
+        
+        # Craete new phyloseq from sample filter
+        new_physeq_obj<-phyloseq(OTU, TAX, sample_data(df_sample_filter))
+        # new_physeq_obj <- subset_samples(new_physeq_obj, !is.na(category_column))
+        new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj)
+        
+        # creating factor with levels in the same order as the select input factors
+        sample_data(new_physeq_obj)[[category_column]] <- factor(sample_data(new_physeq_obj)[[category_column]], levels=c(factor1,factor2))
+        diagdds = phyloseq2Deseq2(new_physeq_obj, as.formula(paste0("~", category_column)))
+
+        # calculate geometric means prior to estimate size factors
+        gm_mean = function(x, na.rm=TRUE){
+          exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+        }
+        
+        geoMeans = apply(counts(diagdds), 1, gm_mean)
+
+        diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
+        diagdds = DESeq(diagdds, fitType="local", quiet=T)
+
+        #investigating test result
+        res = results(diagdds)
+        
+        res = res[order(res$padj, na.last=NA), ]
+        alpha = 0.01
+        sigtab = res[(res$padj < alpha), ]
+        
+        if(nrow(sigtab)>0){
+          sigtab = cbind(as(sigtab, "data.frame"), as(TAX[rownames(sigtab), ], "matrix"))
+          
+          sigtab<-sigtab[order(sigtab$log2FoldChange),]
+          sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
+    
+          rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level], paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]))
+
+          myOTU <- as.data.frame(t(abundance_otu_relative))
+          myOTU$sampleName <- rownames(t(abundance_otu_relative))
+          samdata <- data.frame(sample_data(new_physeq_obj))
+          samdata$sampleName <- rownames(samdata)
+          samdata[, category_column] <- paste("Median abundance", as.character(samdata[, category_column]))
+          data <- merge(samdata, myOTU, by = 'sampleName') 
+          data <- data %>%
+              group_by(get(category_column)) %>%
+            summarise_at(vars(-sampleName), funs(median(as.numeric(.), na.rm = TRUE)))
+          data[,2] <- data[,1]
+          names <- data[,category_column]
+          data <- t(data[3:length(data)])
+          colnames(data) <- unlist(names)
+          data <- as.data.frame.matrix(data)
+          data[[taxon_level]] <- rownames(data)
+                cols_to_show<-sigtab[,c("baseMean", "log2FoldChange", "pvalue", taxon_level)]
+          cols_to_show <- merge(cols_to_show, data, by=taxon_level)
+          
+  
+          output$datatableOutput<-renderDataTable(cols_to_show,
+                                                  options = list(
+                                                    order = list(list(1, 'desc'))
+                                                  )
+          )
+          # log data transformation by https://stats.stackexchange.com/questions/83914/how-to-log-transform-data-with-a-large-number-of-zeros
+          deseq_output<-sigtab
+        }else{
+          output$datatableOutput<-renderDataTable(NULL)
+        }
       }
-    }
-    shinyjs::hide("chartLoading")
-    shinyjs::show("chartContent")
+      shinyjs::hide("chartLoading")
+      shinyjs::show("chartContent")
+      
+      # If the output is null, update the plot appropriately
+      if (is.null(deseq_output)) {
+        shinyjs::disable("btnDownloadPNG")
+        shinyjs::disable("btnDownloadSVG")
+        shinyjs::disable("btnDownloadEPS")
+        shinyjs::disable("btnDownloadCSV")
+
+        output$InputErrors <- renderUI(
+          h5(class="alert alert-warning", "Sorry, but there is no OTU with differential abundance using your search parameters.")
+        )
+
+      }
+
+    } # End if inputs_validated = T
+    
+    
     deseq_output
 
-}) # end runDeseq()
-  
-  
-  downloads <- function(){}
+})
   
   output$btnDownloadPNG <- downloadHandler(
     filename = "plot.png",
