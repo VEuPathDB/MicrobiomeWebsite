@@ -1,4 +1,4 @@
-# Declaring the packages
+
 library(shiny)
 library(shinyjs)
 
@@ -45,17 +45,17 @@ shinyUI(
             style="padding-left: 2.2em;",
             fluidRow(
               strong("Visualization type")
-            ),
-            fluidRow(
-              div(
-                style = "padding-top: 0.65em;",
-                radioButtons("plotTypeRadio",
-                             label=NULL,
-                             choices = c("Dot plot" = "dotplot",
-                                         "Heatmap" = "heatmap"),
-                             selected = c("dotplot"), inline=T)
-              )
             )
+            # fluidRow(
+            #   div(
+            #     style = "padding-top: 0.65em;",
+            #     radioButtons("plotTypeRadio",
+            #                  label=NULL,
+            #                  choices = c("Dot plot" = "dotplot",
+            #                              "Heatmap" = "heatmap"),
+            #                  selected = c("dotplot"), inline=T)
+            #   )
+            # )
           )
         ) ),
          column(3,
@@ -76,35 +76,38 @@ shinyUI(
             )
           )
          ), # end fluidRow toolbar
-        fluidRow(
-          column(12,
-            uiOutput("pvalueCutoff"),
-            tags$style(type="text/css", "#pvalueCutoff {height:10px;}")
-          )
-        ),
+        # fluidRow(
+        #   column(12,
+        #     div(style = "height:40px",
+        #       uiOutput("pvalueCutoff"),
+        #       tags$style(type="text/css", "#pvalueCutoff {height:10px;}")
+        #     )
+        #   )
+        # ),
            div(id="chartLoading", style="text-align: center;",
                h5("Calculating correlation. This could take a while..."),
                img(src = "spinner.gif", id = "loading-spinner")
            ),
            div(
-             id="divContent",
+             id="divContent", style="text-align: center;",
                fluidRow(column(
                  12,
                  div(
                   uiOutput("correlationChart"),
                   uiOutput("hover_info")
                 )
-               )),
+               ))
                # fluidRow(column(
                #   12,
                #   HTML("<span class='hint--bottom  hint--rounded' aria-label='We have rounded corners for you'>Hmm...So you don't like sharp edges?</span>")
                # )),
-               fluidRow(column(
-                 12,
-                   dataTableOutput("datatableOutput")
-               ))
+              #  fluidRow(column(
+              #    12,
+              #      dataTableOutput("datatableOutput")
+              #  ))
             ) # end divContent
     ) # end div id = "app-content",
     ) # end hidden
   ) # end fluidPage
 ) # end shinyUI
+

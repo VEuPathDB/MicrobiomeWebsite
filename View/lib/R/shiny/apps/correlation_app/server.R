@@ -1,7 +1,8 @@
-# Declaring the packages
+
 library(shiny)
 library(data.table)
 library(ggplot2)
+library(shinyjs)
 library(httr)
 library(plotly)
 source("../../functions/wdkDataset.R")
@@ -9,6 +10,12 @@ source("../../lib/ggplot_ext/eupath_default.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/mbiome/mbiome-stats.R")
 source("../../lib/config.R")
+
+#source("~/Documents/functions/wdkDataset.R")
+ source("../../lib/ggplot_ext/eupath_default.R")
+ source("../../lib/ggplot_ext/eupath_functions.R")
+ source("../../lib/config.R")
+ source("../../lib/mbiome/mbiome-reader.R")
 
 #options(shiny.fullstacktrace = TRUE)
 
@@ -59,11 +66,12 @@ shinyServer(function(input, output, session) {
         datasets_path = getWdkDatasetFile('Datasets.tab', session, FALSE, dataStorageDir),
         aggregate_by = input$taxonLevel
       )
+
       mstats <<- MicrobiomeStats$new(mstudy_obj)
 
     }
 
-    
+    otus<-mstudy_obj$get_otus_by_level(input$taxonLevel)
     cor_type<-input$corType
     taxon_level<-input$taxonLevel
     if(identical(cor_type, "tm")){
@@ -119,31 +127,29 @@ shinyServer(function(input, output, session) {
            )
   })
 
-  output$pvalueCutoff <- renderUI({
-    load_properties()
-    if (is.null(properties)) {
-      mySelected <- 0.05
-    } else {
-      mySelected <- properties$selected[properties$input == "input$pvalueCutoff"]
-    }
+  # output$pvalueCutoff <- renderUI({
+  #   load_properties()
+  #   if (is.null(properties)) {
+  #     mySelected <- 0.05
+  #   } else {
+  #     mySelected <- properties$selected[properties$input == "input$pvalueCutoff"]
+  #   }
 
-    sliderInput("pvalueCutoff", 
-                "Filter pvalue", 
-                min = 0, max = 1, 
-                value = mySelected, 
-                step = 0.01, 
-                width = "100%",
-                ticks=T)
-  })
+  #   sliderInput("pvalueCutoff", 
+  #               "Filter pvalue", 
+  #               min = 0, max = 1, 
+  #               value = mySelected, 
+  #               step = 0.01, 
+  #               width = "100%",
+  #               ticks=T)
+  # })
 
   observeEvent({input$taxonLevel
-               input$corType
-               input$pvalueCutoff}, {
+               input$corType}, {
 
     text <- paste0("input\tselected\n",
                    "input$taxonLevel\t", input$taxonLevel, "\n",
-                   "input$corType\t", input$corType, "\n",
-                   "input$pvalueCutoff\t", input$pvalueCutoff
+                   "input$corType\t", input$corType, "\n"
             )
 
     PUT(propUrl, body = "")
@@ -167,38 +173,50 @@ shinyServer(function(input, output, session) {
       isolate(cor_type<-input$corType)
       isolate(taxon_level<-input$taxonLevel)
 
-      p <-input$pvalueCutoff
+      # p <-input$pvalueCutoff
+      p <- 0.05
 
-      result <- subset(cor_result, pvalue<p)
+      # result <- subset(cor_result, pvalue<p)
+      result <- cor_result
 
       cols <- colnames(cor_result)[1:2]
       result[,(cols):= lapply(.SD, as.factor), .SDcols = cols]
 
+      # Turn to data frame for heatmaply
+
       if(nrow(result)>0){
-        if(identical(input$plotTypeRadio, "dotplot")){
-          chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
+
+       max_point_size = 10
+        chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
             geom_point(aes_string(color="rho", size="size"))+
-            scale_size(range = c(3, 9), guide = 'none')+
+            scale_size(range = c(1, max_point_size), guide = 'none')+
             theme_eupath_default(legend.position = "bottom")+
-            scale_colour_gradient(low = "red", high = "blue")+
+            scale_colour_gradient2()+
             labs(x="Sample Details", y=taxon_level, color="Spearman rho")+
-            guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5))
-        }else{
-          chart<-ggplot(result, aes_string(x=cols[2], y=cols[1], fill= "rho"))+
-            geom_tile()+
-            theme_eupath_default(legend.position = "bottom")+
-            scale_fill_gradient(low = "red", high = "blue")+
-            labs(x="Sample Details", y=taxon_level, fill="Spearman rho")+
-            guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5))
-        }
+            guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5))+
+            theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+       #  }else{
+        #   chart<-ggplot(result, aes_string(x=cols[2], y=cols[1], fill= "rho"))+
+        #     geom_tile()+
+        #     theme_eupath_default(legend.position = "bottom")+
+        #     scale_fill_gradient(low = "red", high = "blue")+
+        #     labs(x="Sample Details", y=taxon_level, fill="Spearman rho")+
+        #     guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5))
+        # }
         ggplot_object<<-chart
-        ggplot_build_object<<-ggplot_build(chart)
+        # ggplot_build_object<<-ggplot_build(chart)
+        ggplot_build_object <<- chart
 
         output$plotWrapper<-renderPlotly({
           ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
         })
 
+        # This is not the number of samples...no?
         quantity_samples<-nrow(result)
+        logjs(quantity_samples)
 
         if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
           result_to_show<-plotlyOutput("plotWrapper",
@@ -206,17 +224,18 @@ shinyServer(function(input, output, session) {
            )
         }else{
           result_to_show<-plotlyOutput("plotWrapper",
-            height = quantity_samples*MIN_HEIGHT_AFTER_RESIZE
+            width = "100%",
+            height = quantity_samples*max_point_size*4
           )
         }
         cols_to_show<-result[, !"size", with=FALSE]
-        output$datatableOutput<-renderDataTable(cols_to_show)
+        # output$datatableOutput<-renderDataTable(cols_to_show)
       }else{
-        output$datatableOutput<-renderDataTable(NULL)
+        # output$datatableOutput<-renderDataTable(NULL)
         result_to_show<-h5(class="alert alert-warning", "There is no correlation with the selected parameters.")
       }
     }else{
-      output$datatableOutput<-renderDataTable(NULL)
+      # output$datatableOutput<-renderDataTable(NULL)
     }
 
     shinyjs::hide("chartLoading", anim = TRUE, animType = "slide")
@@ -265,3 +284,4 @@ shinyServer(function(input, output, session) {
   shinyjs::hide(id = "loading-content", anim = TRUE, animType = "fade")
   shinyjs::show("app-content")
 })
+
