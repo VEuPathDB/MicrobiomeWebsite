@@ -130,7 +130,7 @@ shinyServer(function(input, output, session) {
       
       # hash_colors <<- eupath_pallete
       top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA, removeZeros = T)
-      number_taxa_no_zeros <- length(unique(top_ten[[taxon_level]]))
+      number_taxa_no_zeros <- uniqueN(top_ten[[taxon_level]])
 
       ordered<-c(mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros))
       rev_ordered<-c("Other", rev(ordered))
@@ -174,7 +174,7 @@ shinyServer(function(input, output, session) {
 top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
                                         add_other = F, removeZeros = T)
       if(nrow(top_ten>0)){
-        number_taxa_no_zeros <- length(unique(top_ten[[taxon_level]]))
+        number_taxa_no_zeros <- uniqueN(top_ten[[taxon_level]])
 
         ordered<-mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros)
     
