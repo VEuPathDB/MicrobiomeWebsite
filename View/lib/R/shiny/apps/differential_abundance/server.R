@@ -545,7 +545,7 @@ shinyServer(function(input, output, session) {
           sigtab<-sigtab[order(sigtab$log2FoldChange),]
           sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
     
-          rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level], paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]))
+          rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level])
 
           myOTU <- as.data.frame(t(abundance_otu_relative))
           myOTU$sampleName <- rownames(t(abundance_otu_relative))
