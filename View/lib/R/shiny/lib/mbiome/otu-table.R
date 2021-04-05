@@ -132,12 +132,17 @@ OTUClass <- R6Class("OTUClass",
         }
       },
 
-      get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T){
+      get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T, removeZeros=F){
         if(!is.null(taxonomy_level) & !identical(taxonomy_level, private$last_taxonomy)){
           self$reshape(taxonomy_level = taxonomy_level)
         }
 
         top_n <- head(private$summarized_medians, n)
+
+        if(removeZeros) {
+          top_n <- top_n[Abundance>0, ]
+        }
+
         top_n$Abundance<-format(top_n$Abundance, scientific = F)
         private$ordered_n_otu <- top_n[[private$last_taxonomy]]
 

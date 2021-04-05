@@ -18,7 +18,6 @@ shinyServer(function(input, output, session) {
   # df_abundance, df_sample and df_sample.formatted are declared global to avoid 
   # multiple file reading in the reactive section
   mstudy_obj <- NULL
-  hash_colors <- NULL
   
   global_otus<-NULL
   selected_levels<-NULL
@@ -129,11 +128,13 @@ shinyServer(function(input, output, session) {
       global_otus <<- mstudy$get_otus_by_level(taxon_level)
       selected_levels <<- get_columns_taxonomy(taxon_level)
       
-      hash_colors <<- eupath_pallete
-      top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA)
-      ordered<-c(mstudy$otu_table$get_ordered_otu(NUMBER_TAXA))
+      # hash_colors <<- eupath_pallete
+      top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA, removeZeros = T)
+      number_taxa_no_zeros <- length(unique(top_ten[[taxon_level]]))
+
+      ordered<-c(mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros))
       rev_ordered<-c("Other", rev(ordered))
-      names(hash_colors) <<- rev_ordered
+      # names(hash_colors) <<- rev_ordered
      
       if (is.null(properties)) {
         mySelected <- global_otus[1]
@@ -169,144 +170,167 @@ shinyServer(function(input, output, session) {
       shinyjs::show("topTabLoading")
       
       quantity_samples <- mstudy$get_sample_count()
-      
-      top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
-                                        add_other = F)
-      
-      ordered<-mstudy$otu_table$get_ordered_otu(NUMBER_TAXA)
-      
-      top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=ordered)
-      
-      if(identical(category, NO_METADATA_SELECTED)){
-        chart<-ggplot(top_ten, aes_string(x=taxon_level, y="Abundance"))+
-          geom_boxplot()+
-          theme_eupath_default(
-            legend.title = element_text(colour="black", size=rel(1), face="bold"),
-            axis.text.x = element_text(angle = 45, hjust = 1)
-          )+
-          labs(x=taxon_level, y="Relative Abundance")+
-          scale_y_continuous(limits = c(0, 1))+
-          scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
-      }else{ # end if identical(category, NO_METADATA_SELECTED)
-        dt_metadata<-mstudy$get_metadata_as_column(category)
-        dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
+
+top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
+                                        add_other = F, removeZeros = T)
+      if(nrow(top_ten>0)){
+        number_taxa_no_zeros <- length(unique(top_ten[[taxon_level]]))
+
+        ordered<-mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros)
+    
+        top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=ordered)
+
         
-        col_renamed <- make.names(category)
-        all_columns <- colnames(dt_metadata)
-        all_columns[2]<-col_renamed
-        colnames(dt_metadata)<-all_columns
-       
-        #check for numeric category and bin
-        #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
-        if (is.numeric(dt_metadata[[col_renamed]])) {
-          if (uniqueN(dt_metadata[[col_renamed]]) > 10) {
-            dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
-	  } else {
-	    dt_metadata[[col_renamed]] <- as.factor(dt_metadata[[col_renamed]])
-	  }
-        } else if (is.character(dt_metadata[[col_renamed]])) {
-          dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
-        }
- 
-        chart<-ggplot(dt_metadata, aes_string(x=taxon_level, y="Abundance", fill=col_renamed))+
-          geom_boxplot()+
-          theme_eupath_default(
-            legend.title = element_text(colour="black", face="bold"),
-            axis.text.x = element_text(angle = 45, hjust = 1)
-          )+
-          guides(fill = guide_legend(keywidth = 1.7, keyheight = 1.7))+
-          labs(x=taxon_level, y="Relative Abundance",fill=category)+
-          scale_y_continuous(limits = c(0, 1))+
-          scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
+        if(identical(category, NO_METADATA_SELECTED)){
+          chart<-ggplot(top_ten, aes_string(x=taxon_level, y="Abundance"))+
+            geom_boxplot()+
+            theme_eupath_default(
+              legend.title = element_text(colour="black", size=rel(1), face="bold"),
+              axis.text.x = element_text(angle = 45, hjust = 1)
+            )+
+            labs(x=taxon_level, y="Relative Abundance")+
+            scale_y_continuous(limits = c(0, 1))+
+            scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
+        }else{ # end if identical(category, NO_METADATA_SELECTED)
+          dt_metadata<-mstudy$get_metadata_as_column(category)
+          dt_metadata<-merge(dt_metadata, top_ten, by="SampleName")
+          
+          col_renamed <- make.names(category)
+          all_columns <- colnames(dt_metadata)
+          all_columns[2]<-col_renamed
+          colnames(dt_metadata)<-all_columns
         
-        # calculating stats
-        samples_with_details <- mstudy$sample_table$get_samples_details(category)
-        unique_details <- mstudy$sample_table$get_unique_details(category)
-        data_frame_table <- data.frame()
-        
-        if(length(unique_details)==2){
-          # the merged solution is to avoid comparing empty vectors
-          # now we only have all samples being compared and if there is no taxa for
-          # that particular sample we place 0
-          for(i in 1:length(ordered)){
-            taxa_data <- subset(dt_metadata, get(taxon_level)==ordered[i], select=c("SampleName","Abundance"))
-            merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
-            set(merged,which(is.na(merged[[4L]])),4L,0)
-            result<-wilcox.test(merged$Abundance ~ merged$Value, conf.level = 0.95)
-            df<-data.frame(a=ordered[i], "W"=result$statistic, "P-value"=result$p.value)
-            data_frame_table<-rbind(data_frame_table, df)
+          #check for numeric category and bin
+          #TODO figure how this handles for categorical numeric vars. these should be set to factor before now
+          if (is.numeric(dt_metadata[[col_renamed]])) {
+            if (uniqueN(dt_metadata[[col_renamed]]) > 10) {
+              dt_metadata[[col_renamed]] <- rcut_number(dt_metadata[[col_renamed]])
+            } else {
+              dt_metadata[[col_renamed]] <- as.factor(dt_metadata[[col_renamed]])
+            }
+          } else if (is.character(dt_metadata[[col_renamed]])) {
+            dt_metadata[[col_renamed]] <- factor(dt_metadata[[col_renamed]], levels=mixedsort(levels(as.factor(dt_metadata[[col_renamed]]))))
           }
-          colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
+  
+          chart<-ggplot(dt_metadata, aes_string(x=taxon_level, y="Abundance", fill=col_renamed))+
+            geom_boxplot()+
+            theme_eupath_default(
+              legend.title = element_text(colour="black", face="bold"),
+              axis.text.x = element_text(angle = 45, hjust = 1)
+            )+
+            guides(fill = guide_legend(keywidth = 1.7, keyheight = 1.7))+
+            labs(x=taxon_level, y="Relative Abundance",fill=category)+
+            scale_y_continuous(limits = c(0, 1))+
+            scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
           
-	  data_frame_table[, 3] <- round(data_frame_table[, 3], 3)
+          # calculating stats
+          samples_with_details <- mstudy$sample_table$get_samples_details(category)
+          unique_details <- mstudy$sample_table$get_unique_details(category)
+          data_frame_table <- data.frame()
           
-          sketch <- tags$table(
-            tags$thead(
-              tags$tr(
-                tags$th(style="text-align:center;", rowspan = 2, taxon_level),
-                tags$th(style="text-align:center;",colspan = 2, 'Wilcoxon rank sum test')
-              ),
-              tags$tr(
-                tags$th(style="text-align:center;","W"),
-                tags$th(style="text-align:center;","P-Value")
+          if(length(unique_details)==2){
+            # the merged solution is to avoid comparing empty vectors
+            # now we only have all samples being compared and if there is no taxa for
+            # that particular sample we place 0
+            for(i in 1:length(ordered)){
+              taxa_data <- subset(dt_metadata, get(taxon_level)==ordered[i], select=c("SampleName","Abundance"))
+              merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
+              set(merged,which(is.na(merged[[4L]])),4L,0)
+              result<-wilcox.test(merged$Abundance ~ merged$Value, conf.level = 0.95)
+              df<-data.frame(a=ordered[i], "W"=result$statistic, "P-value"=result$p.value)
+              data_frame_table<-rbind(data_frame_table, df)
+            }
+            colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
+            
+            
+            data_frame_table[, 3] <- lapply(data_frame_table[, 3], round, 3)
+            # Removes scientific formatting of P-values which also converts them to strings. If we round instead, we don't need this step
+            
+            # data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
+            
+            sketch <- tags$table(
+              tags$thead(
+                tags$tr(
+                  tags$th(style="text-align:center;", rowspan = 2, taxon_level),
+                  tags$th(style="text-align:center;",colspan = 2, 'Wilcoxon rank sum test')
+                ),
+                tags$tr(
+                  tags$th(style="text-align:center;","W"),
+                  tags$th(style="text-align:center;","P-Value")
+                )
               )
             )
-          )
-          
-          data_frame_table[,taxon_level] <- paste0("<a class='link_table'onclick='goToOtuTab(\"",data_frame_table[,taxon_level],"\")'>",data_frame_table[,taxon_level],"</a>")
-          output$by_top_otu_datatable <- DT::renderDataTable(data_frame_table, escape = F, selection = 'none',
-                                                             container = sketch, rownames = FALSE)
-          
-          
-        }else{
-          for(i in 1:length(ordered)){
-            taxa_data <- subset(dt_metadata, get(taxon_level)==ordered[i], select=c("SampleName","Abundance"))
-            merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
-            # TODO replace other ways to change 0 to the follow line
-            set(merged,which(is.na(merged[[4L]])),4L,0)
-            result<-kruskal.test(merged$Value ~ merged$Abundance)
-            df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
-            data_frame_table<-rbind(data_frame_table, df)
-          }
-          colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
-          data_frame_table[, c(2,4)] <- round(data_frame_table[, c(2,4)], 3)
-          
-          sketch <- tags$table(
-            tags$thead(
-              tags$tr(
-                tags$th(style="text-align:center;", rowspan = 2, taxon_level),
-                tags$th(style="text-align:center;",colspan = 3, 'Kruskal-Wallis rank sum test')
-              ),
-              tags$tr(
-                tags$th(style="text-align:center;","chi-squared"),
-                tags$th(style="text-align:center;","df"),
-                tags$th(style="text-align:center;","P-Value")
+            
+            data_frame_table[,taxon_level] <- paste0("<a class='link_table'onclick='goToOtuTab(\"",data_frame_table[,taxon_level],"\")'>",data_frame_table[,taxon_level],"</a>")
+            output$by_top_otu_datatable <- DT::renderDataTable(data_frame_table, escape = F, selection = 'none',
+                                                              container = sketch, rownames = FALSE)
+            
+            
+          }else{
+            for(i in 1:length(ordered)){
+
+
+              taxa_data <- subset(dt_metadata, get(taxon_level)==ordered[i], select=c("SampleName","Abundance"))
+              merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
+              # TODO replace other ways to change 0 to the follow line
+              set(merged,which(is.na(merged[[4L]])),4L,0)
+              result<-kruskal.test(merged$Value ~ merged$Abundance)
+              df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
+              data_frame_table<-rbind(data_frame_table, df)
+            }
+            colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
+
+            data_frame_table[, 2:4] <- lapply(data_frame_table[, 2:4], round, 3)
+            # Removes scientific formatting of P-values which also converts them to strings. If we round instead, we don't need this step
+            # data_frame_table[,4]<-format(data_frame_table[,4], scientific = F)
+
+            
+            sketch <- tags$table(
+              tags$thead(
+                tags$tr(
+                  tags$th(style="text-align:center;", rowspan = 2, taxon_level),
+                  tags$th(style="text-align:center;",colspan = 3, 'Kruskal-Wallis rank sum test')
+                ),
+                tags$tr(
+                  tags$th(style="text-align:center;","chi-squared"),
+                  tags$th(style="text-align:center;","df"),
+                  tags$th(style="text-align:center;","P-Value")
+                )
               )
             )
-          )
+            
+            data_frame_table[,taxon_level] <- paste0("<a class='link_table'onclick='goToOtuTab(\"",data_frame_table[,input$taxonLevel],"\")'>",data_frame_table[,taxon_level],"</a>")
+            output$by_top_otu_datatable <- DT::renderDataTable(data_frame_table, escape = F, selection = 'none',
+                                                              container = sketch, rownames = FALSE)
           
-          data_frame_table[,taxon_level] <- paste0("<a class='link_table'onclick='goToOtuTab(\"",data_frame_table[,input$taxonLevel],"\")'>",data_frame_table[,taxon_level],"</a>")
-          output$by_top_otu_datatable <- DT::renderDataTable(data_frame_table, escape = F, selection = 'none',
-                                                             container = sketch, rownames = FALSE)
+          }
+        } # end else: if(identical(category, NO_METADATA_SELECTED))
         
-        }
-      } # end else: if(identical(category, NO_METADATA_SELECTED))
-      
-      ggplot_by_top_otu_object <<- chart
-      ggplot_build_by_top_otu_object <<- ggplot_build(chart)
- 
-      output$topOtuPlotWrapper<-renderPlotly({
-        ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
-      })
-      
-      result_to_show<-plotlyOutput("topOtuPlotWrapper", width = "100%", height = "500px")
-      
-      shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
-      shinyjs::show("topTabContent")
+        ggplot_by_top_otu_object <<- chart
+        ggplot_build_by_top_otu_object <<- ggplot_build(chart)
+  
+        output$topOtuPlotWrapper<-renderPlotly({
+          ggplotly(chart) %>% layout(boxmode = "group") %>% plotly:::config(displaylogo = FALSE)
+        })
+        
+        result_to_show<-plotlyOutput("topOtuPlotWrapper", width = "100%", height = "500px")
+        
+        shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
+        shinyjs::show("topTabContent")
+      } else {
+      logjs("No OUTPUT")
+        shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
+        shinyjs::show("topTabContent")
+      return(
+        h5(class="alert alert-danger", "No taxa with median relative abundance > 0 found.") 
+      ) 
+      }
     }
+
 
    
     result_to_show
+      
   })
   
   abundanceByOTU <- function(){}
