@@ -36,7 +36,6 @@ shinyServer(function(input, output, session) {
   
   loaded_category <- FALSE
   
-  hash_colors <- NULL
   
   abundance_otu <- NULL
   abundance_otu_relative <- NULL
@@ -235,7 +234,7 @@ shinyServer(function(input, output, session) {
     }
     
     # output$by_sample_datatable <- renderDataTable(NULL)
-    abundance_otu <<- df_abundance.formatted[,column_otu:ncol(df_abundance.formatted)]
+    abundance_otu <- df_abundance.formatted[,column_otu:ncol(df_abundance.formatted)]
     abundance_otu_relative <<- df_abundance_form_relative[,column_otu:ncol(df_abundance.formatted)]
     OTU <<- otu_table(abundance_otu, taxa_are_rows = T)
     
@@ -243,8 +242,6 @@ shinyServer(function(input, output, session) {
     abundance_taxa <<- fix_taxonomy_names(abundance_taxa)
     
     TAX <<- tax_table(as.matrix(abundance_taxa))
-    
-    hash_colors<<-NULL
 
     # The following are not used -- marking for later deletion
     # merged_phyloseq <- phyloseq(OTU, TAX, SAMPLE)
