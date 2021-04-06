@@ -506,8 +506,10 @@ shinyServer(function(input, output, session) {
 
         
         if(identical(factor2, "Not Factor 1")){
+          df_sample_filter <- na.omit(df_sample_filter)
           df_sample_filter[df_sample_filter[,category_column]!=factor1,category_column]<-"Not Factor 1"
         }else if(identical(factor1, "Not Factor 2")){
+          df_sample_filter <- na.omit(df_sample_filter)
           df_sample_filter[df_sample_filter[,category_column]!=factor2,category_column]<-"Not Factor 2"
         }else{
           df_sample_filter<-df_sample_filter[df_sample_filter[,category_column]==factor1 | df_sample_filter[,category_column]==factor2]
