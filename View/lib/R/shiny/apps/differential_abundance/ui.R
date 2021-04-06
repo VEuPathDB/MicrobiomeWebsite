@@ -83,7 +83,18 @@ shinyUI(
                          )
                   )
                 )# end fluidRow factors
-            ) # div row factors
+            ), # div row factors
+            fluidRow(
+              column(1,
+                actionButton("go", "Go")
+              ),
+              column(9,
+                div(
+                  style = "position:relative;",
+                  uiOutput("InputErrors", style="text-align: center;")
+                )
+              )
+            )
             # )# end hidden factors
         ), # end div toolbar
          div(id="chartArea",
@@ -119,3 +130,4 @@ shinyUI(
     ) # end hidden
   ) # end fluidPage
 ) # end shinyUI
+
