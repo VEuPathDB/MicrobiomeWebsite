@@ -26,6 +26,8 @@ shinyServer(function(input, output, session) {
   column_x<-NULL
   column_y<-NULL
   hash_colors <- NULL
+  max_point_size = 10
+  plot_margin <- 60
 
   # variables to define some plot parameters
   NUMBER_TAXA <- 10
@@ -186,7 +188,7 @@ shinyServer(function(input, output, session) {
 
       if(nrow(result)>0){
 
-       max_point_size = 10
+       
         chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
             geom_point(aes_string(color="rho", size="size"))+
             scale_size(range = c(1, max_point_size), guide = 'none')+
@@ -214,8 +216,8 @@ shinyServer(function(input, output, session) {
           ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
         })
 
-        # This is not the number of samples...no?
-        quantity_samples<-nrow(result)
+        # NEW!
+        quantity_samples <- uniqueN(result[[taxon_level]])
         logjs(quantity_samples)
 
         if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
@@ -225,7 +227,7 @@ shinyServer(function(input, output, session) {
         }else{
           result_to_show<-plotlyOutput("plotWrapper",
             width = "100%",
-            height = quantity_samples*max_point_size*4
+            height = paste0(quantity_samples*max_point_size*4 + plot_margin,"px")
           )
         }
         cols_to_show<-result[, !"size", with=FALSE]
