@@ -59,10 +59,9 @@ OTUClass <- R6Class("OTUClass",
         private$summarized_medians<-private$summarized_otu[, list(Abundance=median(Abundance), Q3 = quantile(Abundance, 0.75), Max=max(Abundance)), by=taxonomy_level]
         setorderv(private$summarized_medians, c("Abundance", "Q3", "Max", taxonomy_level), c(-1,-1, -1, rep(1,length(taxonomy_level))))
 
-        private$summarized_medians<-private$summarized_otu[,list(Abundance=median(Abundance)), by=taxonomy_level]
         private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
-
         setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
+        
         private$ordered_all_otu <- private$summarized_medians[[taxonomy_level]]
 
         self
