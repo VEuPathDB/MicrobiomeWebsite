@@ -27,7 +27,7 @@ shinyServer(function(input, output, session) {
   column_y<-NULL
   hash_colors <- NULL
   max_point_size = 10
-  plot_margin <- 60
+  plot_margin <- 100
 
   # variables to define some plot parameters
   NUMBER_TAXA <- 10
@@ -189,16 +189,17 @@ shinyServer(function(input, output, session) {
       if(nrow(result)>0){
 
        
-        chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
-            geom_point(aes_string(color="rho", size="size"))+
+chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
+            geom_point(aes_string(size="size", colour ="rho"))+
             scale_size(range = c(1, max_point_size), guide = 'none')+
-            theme_eupath_default(legend.position = "bottom")+
-            scale_colour_gradient2()+
-            labs(x="Sample Details", y=taxon_level, color="Spearman rho")+
+            theme_eupath_default()+
+            scale_colour_gradient2(high="#d8b365", mid="#f0f0f0", low="#5ab4ac")+
+            scale_y_discrete(limits = rev(as.character(unique(result[[cols[1]]]))))+
+            labs(x="Sample Details", y=taxon_level, colour="Spearman rho")+
             guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5))+
             theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-
+              panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.position = "top")+
+            theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 
        #  }else{
         #   chart<-ggplot(result, aes_string(x=cols[2], y=cols[1], fill= "rho"))+
@@ -213,23 +214,23 @@ shinyServer(function(input, output, session) {
         ggplot_build_object <<- chart
 
         output$plotWrapper<-renderPlotly({
-          ggplotly(chart) %>% plotly:::config(displaylogo = FALSE)
+          ggplotly(chart, height=37400) %>% layout(xaxis=list(side="top")) %>% plotly:::config(displaylogo = FALSE)
         })
 
         # NEW!
         quantity_samples <- uniqueN(result[[taxon_level]])
         logjs(quantity_samples)
 
-        if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
-          result_to_show<-plotlyOutput("plotWrapper",
-             width = "100%", height = "500px"
-           )
-        }else{
+        #if(quantity_samples<MAX_SAMPLES_NO_RESIZE){
+        #  result_to_show<-plotlyOutput("plotWrapper",
+        #     width = "100%", height = "500px"
+        #   )
+        #}else{
           result_to_show<-plotlyOutput("plotWrapper",
             width = "100%",
             height = paste0(quantity_samples*max_point_size*4 + plot_margin,"px")
           )
-        }
+        #}
         cols_to_show<-result[, !"size", with=FALSE]
         # output$datatableOutput<-renderDataTable(cols_to_show)
       }else{
