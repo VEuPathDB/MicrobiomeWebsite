@@ -131,8 +131,9 @@ shinyServer(function(input, output, session) {
 
       # Update properties based on category (Design Factor)
       if (is.null(properties)) {
-        # message("column_factors: ", column_factors)
-        mySelectedCategory <- character(0) # column_factors
+        # Pre-populate category/design factor input
+        mySelectedCategory <- columns[2]
+        
         mySelectedFactor1 <- character(0) #levels_factors[1]
         mySelectedFactor2 <- character(0) #levels_factors[2]
       } else {
