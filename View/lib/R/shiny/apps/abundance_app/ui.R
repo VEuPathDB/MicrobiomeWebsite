@@ -78,6 +78,11 @@ shinyUI(
            div(
              id="topTabContent",
              fluidRow(
+              div(style="text-align: center; margin: auto; padding-top: 10px",
+                helpText("Note: taxa are sorted by median, then third quantile, then maximum relative abundance.")
+              )
+             ),
+             fluidRow(
                column(12,
                       # div(style = "position:relative",
                       uiOutput("chartByTopOTU"),
