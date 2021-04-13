@@ -160,7 +160,7 @@ shinyServer(function(input, output, session) {
       updateSelectizeInput(session, "category",
                             choices = c(columns[2:length(columns)]),
                             selected = mySelectedCategory,
-                            options = list(placeholder = 'Choose metadata to calculate differential abundance'),
+                            options = list(placeholder = 'Choose Design Factor to calculate differential abundance'),
                             server = T)
       
       
@@ -387,7 +387,7 @@ shinyServer(function(input, output, session) {
       if(identical(category,"")){
 
         output$InputErrors <- renderUI(
-            h5(class="alert alert-warning", "Please choose a design parameter.")
+            h5(class="alert alert-warning", "Please choose a Design Factor.")
           )
         return(FALSE)
       }
