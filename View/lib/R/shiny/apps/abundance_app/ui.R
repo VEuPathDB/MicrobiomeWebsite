@@ -78,17 +78,17 @@ shinyUI(
            div(
              id="topTabContent",
              fluidRow(
-              div(style="text-align: center; margin: auto; padding-top: 10px",
-                helpText("Note: taxa are sorted by median, then third quantile, then maximum relative abundance.")
-              )
-             ),
-             fluidRow(
                column(12,
                       # div(style = "position:relative",
                       uiOutput("chartByTopOTU"),
                       uiOutput("hoverByTopOTU")
                       # )
                )),
+             fluidRow(
+              div(id="helpText", style="text-align: center; margin: auto; padding: 50px; width: 80%",
+                helpText("Note: taxa are sorted by median, then third quantile, then maximum relative abundance.")
+              )
+             ),
              fluidRow(
                column(12,
                       DT::dataTableOutput("by_top_otu_datatable")

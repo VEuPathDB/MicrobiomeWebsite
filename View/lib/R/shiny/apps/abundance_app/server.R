@@ -167,6 +167,7 @@ shinyServer(function(input, output, session) {
     if(!identical(category, "")){
       
       shinyjs::hide("topTabContent")
+      shinyjs::hide(id="helpText")
       shinyjs::show("topTabLoading")
       
       quantity_samples <- mstudy$get_sample_count()
@@ -317,6 +318,13 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
         
         shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
         shinyjs::show("topTabContent")
+        
+        # Show help text only if no metadata is selected and ensure table doesn't show
+        if(identical(category, NO_METADATA_SELECTED)){
+          shinyjs::show(id="helpText")
+          output$by_top_otu_datatable <- NULL
+        }
+
       } else {
       logjs("No OUTPUT")
         shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
@@ -355,6 +363,7 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
     
     if(!identical(category, "") & !identical(otu_picked, "") & !identical(taxon_level,"")){
       shinyjs::hide("singleOtuContent")
+      shinyjs::hide(id="helpText")
       shinyjs::show("singleOtuLoading")
       
       quantity_samples <- mstudy$get_sample_count()
