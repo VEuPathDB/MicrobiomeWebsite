@@ -39,25 +39,9 @@ shinyUI(
            4,
            uiOutput("corType")
          ),
-         hidden(
-         column(3,
-          div(
-            style="padding-left: 2.2em;",
-            fluidRow(
-              strong("Visualization type")
-            )
-            # fluidRow(
-            #   div(
-            #     style = "padding-top: 0.65em;",
-            #     radioButtons("plotTypeRadio",
-            #                  label=NULL,
-            #                  choices = c("Dot plot" = "dotplot",
-            #                              "Heatmap" = "heatmap"),
-            #                  selected = c("dotplot"), inline=T)
-            #   )
-            # )
-          )
-        ) ),
+        column(2,
+          actionButton("go", style="margin-top: 25px; font-weight: bolder; border-color: blue; color: blue;", label = "Run Analysis")
+        ),
          column(3,
             div(
               # style = "padding-left: 0.1em;",
@@ -76,14 +60,6 @@ shinyUI(
             )
           )
          ), # end fluidRow toolbar
-        # fluidRow(
-        #   column(12,
-        #     div(style = "height:40px",
-        #       uiOutput("pvalueCutoff"),
-        #       tags$style(type="text/css", "#pvalueCutoff {height:10px;}")
-        #     )
-        #   )
-        # ),
            div(id="chartLoading", style="text-align: center;",
                h5("Calculating correlation. This could take a while..."),
                img(src = "spinner.gif", id = "loading-spinner")
@@ -101,11 +77,14 @@ shinyUI(
                #   12,
                #   HTML("<span class='hint--bottom  hint--rounded' aria-label='We have rounded corners for you'>Hmm...So you don't like sharp edges?</span>")
                # )),
-              #  fluidRow(column(
-              #    12,
-              #      dataTableOutput("datatableOutput")
-              #  ))
-            ) # end divContent
+              fluidRow(column(
+                12,
+                   dataTableOutput("datatableOutput")
+              ))
+            ), # end divContent
+            div(id="noPlot", syle="text-align: center;",
+              h5(class="alert alert-warning","Click Run Analysis to make a new plot")
+            )
     ) # end div id = "app-content",
     ) # end hidden
   ) # end fluidPage
