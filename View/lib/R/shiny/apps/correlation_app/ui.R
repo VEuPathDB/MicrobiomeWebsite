@@ -72,12 +72,12 @@ shinyUI(
                   uiOutput("correlationChart"),
                   uiOutput("hover_info")
                 )
-               ))
+               )),
                # fluidRow(column(
                #   12,
                #   HTML("<span class='hint--bottom  hint--rounded' aria-label='We have rounded corners for you'>Hmm...So you don't like sharp edges?</span>")
                # )),
-              fluidRow(column(
+             fluidRow(column(
                 12,
                    dataTableOutput("datatableOutput")
               ))
