@@ -40,7 +40,7 @@ shinyUI(
            uiOutput("corType")
          ),
         column(2,
-          actionButton("go", style="margin-top: 25px; font-weight: bolder; border-color: blue; color: blue;", label = "Run Analysis")
+          actionButton("go", style="margin-top: 25px; background-color: #4e81bd; color: white; border-style: none;", label = "Run Analysis")
         ),
          column(3,
             div(
