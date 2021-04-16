@@ -449,7 +449,7 @@ shinyServer(function(input, output, session) {
           geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
           geom_point(aes(size = log10(0.5+1/pvalue)))+
           scale_size(range = c(3, 9), guide = 'none')+
-          # theme_eupath(legend.position = "right", legend.direction="vertical")+
+          labs(title = paste0("<b>",category,"</b>: ", factor1, " <i>vs.</i> ", factor2))+
           theme_eupath(legend.position = "bottom")+
           scale_y_discrete(position = "right", limits=limits_plot, breaks = levels(deseq_result[[taxon_level]]) )+
           guides(colour = guide_legend(override.aes = list(size=8)))
