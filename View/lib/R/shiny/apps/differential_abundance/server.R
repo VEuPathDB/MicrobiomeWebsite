@@ -519,7 +519,7 @@ shinyServer(function(input, output, session) {
         # Craete new phyloseq from sample filter
         new_physeq_obj<-phyloseq(OTU, TAX, sample_data(df_sample_filter))
         # new_physeq_obj <- subset_samples(new_physeq_obj, !is.na(category_column))
-        new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj)
+        # new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj) # Removed because of expected samples with low count, WGS data.
         
         # creating factor with levels in the same order as the select input factors
         sample_data(new_physeq_obj)[[category_column]] <- factor(sample_data(new_physeq_obj)[[category_column]], levels=c(factor1,factor2))
