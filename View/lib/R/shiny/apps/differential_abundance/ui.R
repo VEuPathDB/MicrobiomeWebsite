@@ -81,13 +81,13 @@ shinyUI(
                            options = list(placeholder = 'First choose Design Factor'),
                            width = "100%"
                          )
+                  ),
+                  column(2,
+                    actionButton("go", style="background-color: #4e81bd; color: white; border-style: none; margin-top: 25px", label="Run Analysis")
                   )
                 )# end fluidRow factors
             ), # div row factors
             fluidRow(
-              column(1,
-                actionButton("go", "Go")
-              ),
               column(9,
                 div(
                   style = "position:relative;",

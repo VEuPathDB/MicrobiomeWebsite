@@ -131,8 +131,9 @@ shinyServer(function(input, output, session) {
 
       # Update properties based on category (Design Factor)
       if (is.null(properties)) {
-        # message("column_factors: ", column_factors)
-        mySelectedCategory <- character(0) # column_factors
+        # Pre-populate category/design factor input
+        mySelectedCategory <- columns[2]
+        
         mySelectedFactor1 <- character(0) #levels_factors[1]
         mySelectedFactor2 <- character(0) #levels_factors[2]
       } else {
@@ -160,7 +161,7 @@ shinyServer(function(input, output, session) {
       updateSelectizeInput(session, "category",
                             choices = c(columns[2:length(columns)]),
                             selected = mySelectedCategory,
-                            options = list(placeholder = 'Choose metadata to calculate differential abundance'),
+                            options = list(placeholder = 'Choose Design Factor to calculate differential abundance'),
                             server = T)
       
       
@@ -387,7 +388,7 @@ shinyServer(function(input, output, session) {
       if(identical(category,"")){
 
         output$InputErrors <- renderUI(
-            h5(class="alert alert-warning", "Please choose a design parameter.")
+            h5(class="alert alert-warning", "Please choose a Design Factor.")
           )
         return(FALSE)
       }
@@ -448,7 +449,7 @@ shinyServer(function(input, output, session) {
           geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
           geom_point(aes(size = log10(0.5+1/pvalue)))+
           scale_size(range = c(3, 9), guide = 'none')+
-          # theme_eupath(legend.position = "right", legend.direction="vertical")+
+          labs(title = paste0("<b>",category,"</b>: ", factor1, " <i>vs.</i> ", factor2))+
           theme_eupath(legend.position = "bottom")+
           scale_y_discrete(position = "right", limits=limits_plot, breaks = levels(deseq_result[[taxon_level]]) )+
           guides(colour = guide_legend(override.aes = list(size=8)))
@@ -518,7 +519,7 @@ shinyServer(function(input, output, session) {
         # Craete new phyloseq from sample filter
         new_physeq_obj<-phyloseq(OTU, TAX, sample_data(df_sample_filter))
         # new_physeq_obj <- subset_samples(new_physeq_obj, !is.na(category_column))
-        new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj)
+        # new_physeq_obj <- prune_samples(sample_sums(new_physeq_obj) > 500, new_physeq_obj) # Removed because of expected samples with low count, WGS data.
         
         # creating factor with levels in the same order as the select input factors
         sample_data(new_physeq_obj)[[category_column]] <- factor(sample_data(new_physeq_obj)[[category_column]], levels=c(factor1,factor2))
