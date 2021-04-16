@@ -86,7 +86,7 @@ shinyUI(
             ), # div row factors
             fluidRow(
               column(1,
-                actionButton("go", "Go")
+                actionButton("go", style="background-color: #4e81bd; color: white; border-style: none; margin-top: 25px", label="Run Analysis")
               ),
               column(9,
                 div(
