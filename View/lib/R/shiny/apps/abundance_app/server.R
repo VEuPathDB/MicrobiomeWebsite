@@ -326,8 +326,18 @@ shinyServer(function(input, output, session) {
               merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
               # TODO replace other ways to change 0 to the follow line
               set(merged,which(is.na(merged[[4L]])),4L,0)
-              result<-kruskal.test(merged$Value ~ merged$Abundance)
-              df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
+              
+              # If there is no abundance of taxon in samples with selected sample details, the kruskal.test will err. The following prevents the error.
+              merged_no_nas <- na.omit(merged, cols="Value")
+              any_abundance <- sum(merged_no_nas[["Abundance"]])>0
+
+              if(any_abundance){
+                result<-kruskal.test(merged$Value ~ merged$Abundance)
+                df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
+              } else {
+                print("no abundance")
+                df<-data.frame("a"=ordered[i], "chi-squared"=NA, "df"=NA, "P-value"=NA)
+              }
               data_frame_table<-rbind(data_frame_table, df)
             }
             colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
@@ -498,9 +508,22 @@ shinyServer(function(input, output, session) {
           html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Wilcoxon rank sum test: W = %f, p-value = %.8f</li></ul>",
                                        result$statistic, result$p.value))
         }else{
-          result<-kruskal.test(merged_to_stats[[category_col]]~merged_to_stats[[abundance_col]])
-          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
-                                       result$statistic, result$parameter, result$p.value))
+          
+          # If there is no abundance of taxon in samples with selected sample details, the kruskal.test will err. The following prevents the error.
+          merged_no_nas <- na.omit(merged_to_stats, cols=category_col)
+          any_abundance <- sum(merged_no_nas[["Abundance"]])>0
+
+          if(any_abundance){
+
+            result<-kruskal.test(merged_to_stats[[category_col]]~merged_to_stats[[abundance_col]])
+            html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
+                                         result$statistic, result$parameter, result$p.value))
+          } else {
+
+            print("no abundance") # Will help us debug faster in the future ;)
+            html_formatted <- HTML("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test error: all observations in the same group</li></ul>")  # matched error message to that given by kruskal.test
+
+          } # end if(any_abundance)
         }
         shinyjs::show("result_tests")
         output$result_tests <-renderUI({html_formatted})
