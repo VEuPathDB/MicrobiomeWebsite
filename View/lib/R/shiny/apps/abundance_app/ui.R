@@ -28,13 +28,17 @@ shinyUI(
     id = "app-content",
          fluidRow(
            column(
-           3,
+           2,
            uiOutput("taxLevel"),
            # this div is not showed, this is just a workaround to load the files in a reactive environment
            div(style = "display: none;",
                checkboxInput(
                  "taxa_are_rows", label = "", value = T
                ))
+         ),
+         column(
+           2,
+           uiOutput("rankingMethod")
          ),
          column(
            5,
@@ -47,7 +51,7 @@ shinyUI(
            )
          ),
 
-         column(4,
+         column(3,
             div(
               style = "padding-left: 1em;",
               fluidRow(
@@ -75,8 +79,13 @@ shinyUI(
                  h5("Formatting plot..."),
                  img(src = "spinner.gif", id = "loading-spinner")
              )),
-           div(
+            div(
              id="topTabContent",
+            #  fluidRow(
+            #   div(style="text-align: center; margin: auto; padding-top: 10px",
+            #     helpText("Note: taxa are sorted by median, then third quantile, then maximum relative abundance.")
+            #   )
+            #  ),
              fluidRow(
                column(12,
                       # div(style = "position:relative",
@@ -85,17 +94,37 @@ shinyUI(
                       # )
                )),
              fluidRow(
-              div(id="helpText", style="text-align: center; margin: auto; padding: 50px; width: 80%",
-                helpText("Note: taxa are sorted by median, then third quantile, then maximum relative abundance.")
-              )
-             ),
-             fluidRow(
                column(12,
                       DT::dataTableOutput("by_top_otu_datatable")
                )
              )
            )
          ),# end tabPabel byTopOTU
+        # tabPanel(
+        #   id="firstTab",
+        #   title = "Overview",
+        #   value = "bySample",
+        #   hidden(
+        #     div(id="chartLoading", style="text-align: center;",
+        #         h5("Formatting plot..."),
+        #         img(src = "spinner.gif", id = "loading-spinner")
+        #     )),
+        #   div(
+        #     id="overviewTabContent",
+        #       fluidRow(column(
+        #         12,
+        #         div(style = "position:relative",
+        #             # div(onclick="shinyjs.newScrollTo('div_sample_datatable')",
+        #               uiOutput("overviewChart"),
+        #               # ),
+        #             uiOutput("overviewTooltip"))
+        #       )),
+        #       fluidRow(column(
+        #         12,
+        #           dataTableOutput("overviewDatatable")
+        #       ))
+        #   )
+        # ), # end tabPanel bySample
          tabPanel(
            title = "Single Taxon",
            value = "byOTU",
@@ -142,3 +171,4 @@ shinyUI(
     ) # end hidden
   ) # end fluidPage
 ) # end shinyUI
+
