@@ -295,7 +295,7 @@ shinyServer(function(input, output, session) {
             colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
             
             
-            data_frame_table[, 3] <- lapply(data_frame_table[, 3], round, 3)
+            data_frame_table[, 2:3] <- lapply(data_frame_table[, 2:3], round, 3)
             # Removes scientific formatting of P-values which also converts them to strings. If we round instead, we don't need this step
             
             # data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
