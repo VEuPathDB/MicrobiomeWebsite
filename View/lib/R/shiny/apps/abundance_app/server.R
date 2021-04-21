@@ -485,7 +485,7 @@ shinyServer(function(input, output, session) {
         merged_to_stats<-merge(metadata_as_column, otu_data, by="SampleName", all=T)
         
         chart<-ggplot(merged_to_plot, aes_string(x=col_renamed, y="Abundance"))+geom_boxplot()+
-          theme_eupath_default()+
+          theme_eupath_default(axis.text.x = element_text(angle = 45, hjust = 1))+
           labs(x=stringi::stri_trans_totitle(category), y=paste(otu_picked, "Relative Abundance"))
         
         output$singleOtuPlotWrapper<-renderPlotly({
