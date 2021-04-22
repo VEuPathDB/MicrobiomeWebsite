@@ -382,7 +382,6 @@ shinyServer(function(input, output, session) {
         
         # Show help text only if no metadata is selected and ensure table doesn't show
         if(identical(category, NO_METADATA_SELECTED)){
-          shinyjs::show(id="helpText")
           output$by_top_otu_datatable <- NULL
         }
 
@@ -424,7 +423,6 @@ shinyServer(function(input, output, session) {
     
     if(!identical(category, "") & !identical(otu_picked, "") & !identical(taxon_level,"")){
       shinyjs::hide("singleOtuContent")
-      shinyjs::hide(id="helpText")
       shinyjs::show("singleOtuLoading")
       
       quantity_samples <- mstudy$get_sample_count()
