@@ -380,7 +380,6 @@ shinyServer(function(input, output, session) {
         shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
         shinyjs::show("topTabContent")
         
-        # Show help text only if no metadata is selected and ensure table doesn't show
         if(identical(category, NO_METADATA_SELECTED)){
           output$by_top_otu_datatable <- NULL
         }
