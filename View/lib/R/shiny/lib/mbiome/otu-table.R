@@ -7,7 +7,8 @@ OTUClass <- R6Class("OTUClass",
       use_relative_abundance = T,
       ordered_n_otu = NULL,
       ordered_all_otu = NULL,
-      sample_names = NULL
+      sample_names = NULL,
+      summarized_ranked = NULL
     ),
 
     public = list(
@@ -56,12 +57,10 @@ OTUClass <- R6Class("OTUClass",
         # end of workaroud for perfomance
         colnames(private$summarized_otu)<-c("SampleName", selected_levels, "Abundance")
 
-        private$summarized_medians<-private$summarized_otu[,list(Abundance=median(Abundance)), by=taxonomy_level]
 
-        private$summarized_means<-private$summarized_otu[,list(Abundance=mean(Abundance)), by=taxonomy_level]
-
-        setorderv(private$summarized_medians, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
-        setorderv(private$summarized_means, c("Abundance", taxonomy_level), c(-1,rep(1,length(taxonomy_level))))
+        private$summarized_medians<-private$summarized_otu[, list(Abundance=median(Abundance)), by=taxonomy_level]
+        setorderv(private$summarized_medians, c("Abundance", taxonomy_level), c(-1, rep(1,length(taxonomy_level))))
+        
         private$ordered_all_otu <- private$summarized_medians[[taxonomy_level]]
 
         self
@@ -117,7 +116,7 @@ OTUClass <- R6Class("OTUClass",
           private$ordered_all_otu
         }else{
           if(n != length(private$ordered_n_otu)){
-            top_n <- head(private$summarized_medians, n)
+            top_n <- head(private$summarized_ranked, n)
             private$ordered_n_otu <- top_n[[private$last_taxonomy]]
           }
           private$ordered_n_otu
@@ -132,13 +131,32 @@ OTUClass <- R6Class("OTUClass",
         }
       },
 
-      get_top_n_by_median = function(taxonomy_level=NULL, n=10, add_other=T, removeZeros=F){
+      get_top_n_by_method = function(taxonomy_level=NULL, n=10, ranking_method = "Median", add_other=T, removeZeros=F){
+        
         if(!is.null(taxonomy_level) & !identical(taxonomy_level, private$last_taxonomy)){
           self$reshape(taxonomy_level = taxonomy_level)
         }
 
-        top_n <- head(private$summarized_medians, n)
+        if(identical(ranking_method, "Median")){
+          private$summarized_ranked <- private$summarized_otu[, list(Abundance=median(Abundance)), by=taxonomy_level]
+        } else if(identical(ranking_method,"Maximum")) {
+          private$summarized_ranked <- private$summarized_otu[, list(Abundance=max(Abundance)), by=taxonomy_level]
+        } else if(identical(ranking_method, "Third quartile")) {
+          private$summarized_ranked <- private$summarized_otu[, list(Abundance=quantile(Abundance, 0.75)), by=taxonomy_level]
+        } else if(identical(ranking_method, "Variance")) {
+          private$summarized_ranked <- private$summarized_otu[, list(Abundance=var(Abundance)), by=taxonomy_level]
+        } else {
+          private$summarized_ranked <- NULL
+        }
 
+        
+        setorderv(private$summarized_ranked, c("Abundance", taxonomy_level), c(-1, rep(1,length(taxonomy_level))))
+
+
+        print(private$summarized_ranked)
+        top_n <- head(private$summarized_ranked, n)
+
+        
         if(removeZeros) {
           top_n <- top_n[Abundance>0, ]
         }
@@ -156,6 +174,8 @@ OTUClass <- R6Class("OTUClass",
           setcolorder(grouped_dt, colnames(filtered_ten))
           filtered_ten <- rbindlist(list(filtered_ten,  grouped_dt))
         }
+
+
         filtered_ten
       },
 

@@ -104,14 +104,33 @@ shinyServer(function(input, output, session) {
     )
   })
 
+  output$rankingMethod <- renderUI({
+    # load_properties()
+    if (is.null(properties)) {
+      mySelected <- "Median"
+    } else {
+      mySelected <- properties$selected[properties$input == "input$rankingMethod"]
+    }
+
+    selectInput(
+      "rankingMethod",
+      label = "Ranking method",
+      choices = c("Median", "Maximum", "Third quartile", "Variance"),
+      selected = mySelected,
+      width = '100%'
+    )
+  })
+
   observeEvent({input$taxonLevel
                input$category
-               input$filterOTU}, {
+               input$filterOTU
+               input$rankingMethod}, {
 
     text <- paste0("input\tselected\n",
                    "input$taxonLevel\t", input$taxonLevel, "\n",
                    "input$category\t", input$category, "\n",
-                   "input$filterOTU\t", input$filterOTU
+                   "input$filterOTU\t", input$filterOTU, "\n",
+                   "input$rankingMethod\t", input$rankingMethod
             )
 
     PUT(propUrl, body = "")
@@ -129,11 +148,11 @@ shinyServer(function(input, output, session) {
       selected_levels <<- get_columns_taxonomy(taxon_level)
       
       # hash_colors <<- eupath_pallete
-      top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA, removeZeros = T)
-      number_taxa_no_zeros <- uniqueN(top_ten[[taxon_level]])
+      # top_ten<-mstudy$get_top_n_by_median(taxon_level, NUMBER_TAXA, removeZeros = F)
+      # number_taxa_no_zeros <- uniqueN(top_ten[[taxon_level]])
 
-      ordered<-c(mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros))
-      rev_ordered<-c("Other", rev(ordered))
+      #ordered<-c(mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros))
+      # rev_ordered<-c("Other", rev(ordered))
       # names(hash_colors) <<- rev_ordered
      
       if (is.null(properties)) {
@@ -161,6 +180,7 @@ shinyServer(function(input, output, session) {
     mstudy <- load_microbiome_data()
     category<-input$category
     taxon_level<-input$taxonLevel
+    ranking_method <- input$rankingMethod
     
     result_to_show<-NULL
     
@@ -171,16 +191,48 @@ shinyServer(function(input, output, session) {
       
       quantity_samples <- mstudy$get_sample_count()
 
-top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAXA, 
-                                        add_other = F, removeZeros = T)
-      if(nrow(top_ten>0)){
-        number_taxa_no_zeros <- uniqueN(top_ten[[taxon_level]])
+      # Determine top ten based on selected method
+      top_ten <- mstudy$get_top_n_by_method(taxonomy_level = taxon_level, n = NUMBER_TAXA, ranking_method = ranking_method,
+                    add_other = F, removeZeros = T)
 
-        ordered<-mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros)
-    
+      nTaxa <- length(mstudy$get_otus_by_level())
+
+      if(nrow(top_ten>0)){
+        
+        number_taxa_no_zeros <- length(unique(top_ten[[taxon_level]]))
+
+        ordered<-mstudy$otu_table$get_ordered_otu(number_taxa_no_zeros) # Contains only those taxa with ranking_method > 0
+        
         top_ten[[taxon_level]]<-factor(top_ten[[taxon_level]], levels=ordered)
 
-        
+
+        # Title may vary based on ranking_method in the future
+        # If the top taxa had to be cut off at n=10, then we want to adjust the title accordingly. Taxa were cut off if number_taxa_no_zeros < nTaxa
+        nTaxa <- length(mstudy$get_otus_by_level(taxon_level))
+
+        if (nTaxa <= 10) {
+          # Then we have the ability to show all taxa
+
+          if (number_taxa_no_zeros < nTaxa) {
+            # Then we have cut off some taxa.
+            title = paste0("Taxa ranked by ", tolower(ranking_method)," (taxa with ", tolower(ranking_method)," = 0 not shown)")
+          } else {
+            # All taxa are on the plot
+            title = paste0("All taxa ranked by ",tolower(ranking_method))
+          }
+
+        } else {
+          # We cannot show taxa within this plot
+
+          if (number_taxa_no_zeros == 10) {
+            # Then we are showing exactly 10 taxa (number_taxa_no_zeros is never greater than 10)
+            title = paste0("Top ten taxa ranked by ", tolower(ranking_method))
+          } else {
+            # We are showing < 10 taxa
+            title = paste0("Top taxa ranked by ", tolower(ranking_method)," (taxa with ", tolower(ranking_method)," = 0 not shown)")
+          }
+        } # end if (nTaxa <= 10)
+ 
         if(identical(category, NO_METADATA_SELECTED)){
           chart<-ggplot(top_ten, aes_string(x=taxon_level, y="Abundance"))+
             geom_boxplot()+
@@ -188,7 +240,7 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
               legend.title = element_text(colour="black", size=rel(1), face="bold"),
               axis.text.x = element_text(angle = 45, hjust = 1)
             )+
-            labs(x=taxon_level, y="Relative Abundance")+
+            labs(x=taxon_level, y="Relative Abundance", title=title)+
             scale_y_continuous(limits = c(0, 1))+
             scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
         }else{ # end if identical(category, NO_METADATA_SELECTED)
@@ -219,7 +271,7 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
               axis.text.x = element_text(angle = 45, hjust = 1)
             )+
             guides(fill = guide_legend(keywidth = 1.7, keyheight = 1.7))+
-            labs(x=taxon_level, y="Relative Abundance",fill=category)+
+            labs(x=taxon_level, y="Relative Abundance",fill=category, title=title)+
             scale_y_continuous(limits = c(0, 1))+
             scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n"))
           
@@ -243,7 +295,7 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
             colnames(data_frame_table)<-c(taxon_level, "W", "P-Value")
             
             
-            data_frame_table[, 3] <- lapply(data_frame_table[, 3], round, 3)
+            data_frame_table[, 2:3] <- lapply(data_frame_table[, 2:3], round, 3)
             # Removes scientific formatting of P-values which also converts them to strings. If we round instead, we don't need this step
             
             # data_frame_table[,3]<-format(data_frame_table[,3], scientific = F)
@@ -274,8 +326,18 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
               merged<-merge(samples_with_details, taxa_data, by="SampleName", all = TRUE)
               # TODO replace other ways to change 0 to the follow line
               set(merged,which(is.na(merged[[4L]])),4L,0)
-              result<-kruskal.test(merged$Value ~ merged$Abundance)
-              df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
+              
+              # If there is no abundance of taxon in samples with selected sample details, the kruskal.test will err. The following prevents the error.
+              merged_no_nas <- na.omit(merged, cols="Value")
+              any_abundance <- sum(merged_no_nas[["Abundance"]])>0
+
+              if(any_abundance){
+                result<-kruskal.test(merged$Value ~ merged$Abundance)
+                df<-data.frame("a"=ordered[i], "chi-squared"=unname(result$statistic), "df"=result$parameter, "P-value"=result$p.value)
+              } else {
+                print("no abundance")
+                df<-data.frame("a"=ordered[i], "chi-squared"=NA, "df"=NA, "P-value"=NA)
+              }
               data_frame_table<-rbind(data_frame_table, df)
             }
             colnames(data_frame_table)<-c(taxon_level, "chi-squared", "df", "P-Value")
@@ -317,12 +379,17 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
         
         shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
         shinyjs::show("topTabContent")
+        
+        if(identical(category, NO_METADATA_SELECTED)){
+          output$by_top_otu_datatable <- NULL
+        }
+
       } else {
       logjs("No OUTPUT")
         shinyjs::hide("topTabLoading", anim = TRUE, animType = "slide")
         shinyjs::show("topTabContent")
       return(
-        h5(class="alert alert-danger", "No taxa with median relative abundance > 0 found.") 
+        h5(class="alert alert-danger", paste0("No taxa with ",tolower(ranking_method)," > 0 found.")) 
       ) 
       }
     }
@@ -415,7 +482,7 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
         merged_to_stats<-merge(metadata_as_column, otu_data, by="SampleName", all=T)
         
         chart<-ggplot(merged_to_plot, aes_string(x=col_renamed, y="Abundance"))+geom_boxplot()+
-          theme_eupath_default()+
+          theme_eupath_default(axis.text.x = element_text(angle = 45, hjust = 1))+
           labs(x=stringi::stri_trans_totitle(category), y=paste(otu_picked, "Relative Abundance"))
         
         output$singleOtuPlotWrapper<-renderPlotly({
@@ -438,9 +505,22 @@ top_ten<-mstudy$get_top_n_by_median(taxonomy_level = taxon_level, n = NUMBER_TAX
           html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Wilcoxon rank sum test: W = %f, p-value = %.8f</li></ul>",
                                        result$statistic, result$p.value))
         }else{
-          result<-kruskal.test(merged_to_stats[[category_col]]~merged_to_stats[[abundance_col]])
-          html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
-                                       result$statistic, result$parameter, result$p.value))
+          
+          # If there is no abundance of taxon in samples with selected sample details, the kruskal.test will err. The following prevents the error.
+          merged_no_nas <- na.omit(merged_to_stats, cols=category_col)
+          any_abundance <- sum(merged_no_nas[["Abundance"]])>0
+
+          if(any_abundance){
+
+            result<-kruskal.test(merged_to_stats[[category_col]]~merged_to_stats[[abundance_col]])
+            html_formatted<-HTML(sprintf("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test: chi-squared = %f, df = %f, p-value = %.8f</li></ul>",
+                                         result$statistic, result$parameter, result$p.value))
+          } else {
+
+            print("no abundance") # Will help us debug faster in the future ;)
+            html_formatted <- HTML("<ul class=\"shell-body\"> <li>Kruskal-Wallis rank sum test error: all observations in the same group</li></ul>")  # matched error message to that given by kruskal.test
+
+          } # end if(any_abundance)
         }
         shinyjs::show("result_tests")
         output$result_tests <-renderUI({html_formatted})

@@ -28,13 +28,17 @@ shinyUI(
     id = "app-content",
          fluidRow(
            column(
-           3,
+           2,
            uiOutput("taxLevel"),
            # this div is not showed, this is just a workaround to load the files in a reactive environment
            div(style = "display: none;",
                checkboxInput(
                  "taxa_are_rows", label = "", value = T
                ))
+         ),
+         column(
+           2,
+           uiOutput("rankingMethod")
          ),
          column(
            5,
@@ -47,7 +51,7 @@ shinyUI(
            )
          ),
 
-         column(4,
+         column(3,
             div(
               style = "padding-left: 1em;",
               fluidRow(
@@ -75,7 +79,7 @@ shinyUI(
                  h5("Formatting plot..."),
                  img(src = "spinner.gif", id = "loading-spinner")
              )),
-           div(
+            div(
              id="topTabContent",
              fluidRow(
                column(12,
@@ -137,3 +141,4 @@ shinyUI(
     ) # end hidden
   ) # end fluidPage
 ) # end shinyUI
+
