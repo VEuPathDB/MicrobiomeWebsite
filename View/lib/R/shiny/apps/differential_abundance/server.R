@@ -370,7 +370,16 @@ shinyServer(function(input, output, session) {
   # Render main chart. Contains functions listening to Generate Plot button press
   observeEvent(input$go, {
 
-    # Create plot
+    # Clear current plot
+    output$mainChart <- NULL
+    output$plotWrapper <- NULL
+    output$datatableOutput <- NULL
+
+    # Remove ui elements
+    removeUI(selector = ".svg-container", multiple=TRUE, immediate=TRUE)
+    removeUI(selector = "#plotWrapper", multiple=TRUE, immediate=TRUE)
+
+    # Create new plot
     generated_plot <- generatePlot()
 
     # The following must be set *outside* of the generatePlot function or the resizing does not work properly
