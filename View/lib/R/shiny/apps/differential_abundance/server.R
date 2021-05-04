@@ -473,6 +473,8 @@ shinyServer(function(input, output, session) {
         max_fold_change<-max(abs(deseq_result$log2FoldChange))
         category_column <- hash_count_samples[[category]]
         limits_plot<-c(levels(deseq_result[[taxon_level]]),"","")
+        # Remove introduced "" levels
+        limits_plot <- limits_plot[limits_plot != ""]
         rows_in_plot <<- uniqueN(deseq_result[[taxon_level]])
         
         chart<-ggplot(deseq_result, aes_string(x="log2FoldChange", y=taxon_level, color="Phylum")) +
