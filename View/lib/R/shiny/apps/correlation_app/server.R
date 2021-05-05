@@ -260,9 +260,8 @@ observeEvent(input$go, {
               scale_size(range = c(1, max_point_size), guide = 'none')+
               theme_eupath_default()+
               scale_colour_gradient2(high="#d8b365", mid="#f0f0f0", low="#5ab4ac")+
-              scale_y_discrete(limits = rev(as.character(unique(result[[cols[1]]]))))+
-              labs(x="Sample Details", y=taxon_level, colour="Spearman rho")+
-              guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5))+
+              scale_y_discrete(limits = stringr::str_sort(as.character(unique(result[[cols[1]]])), decreasing=T))+
+              labs(x="Sample Details", y=chart_ylab, colour="Spearman rho")+guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5))+
               theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.position = "top",
                 axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))#+
