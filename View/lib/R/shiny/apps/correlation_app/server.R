@@ -109,7 +109,7 @@ shinyServer(function(input, output, session) {
 
     selectInput(
              "taxonLevel",
-             label = "Taxonomy level",
+             label = "Taxonomic level",
              choices = c("Phylum", "Class", "Order", "Family", "Genus", "Species"),
              selected = mySelected,
              width = '100%'
