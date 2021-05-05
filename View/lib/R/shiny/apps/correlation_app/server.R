@@ -256,7 +256,7 @@ observeEvent(input$go, {
           }
 
           chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
-              geom_point(aes_string(size="size", colour ="rho"))+
+              geom_point(aes(size = log10(0.5+1/pvalue), colour =rho))+
               scale_size(range = c(1, max_point_size), guide = 'none')+
               theme_eupath_default()+
               scale_colour_gradient2(high="#d8b365", mid="#f0f0f0", low="#5ab4ac", limits=c(-1,1))+
