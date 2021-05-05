@@ -61,22 +61,39 @@ MicrobiomeStats <- R6Class("MicrobiomeStats",
 
        columns_data<-colnames(factor1)
        columns_metadata<-colnames(factor2)
+
+       # Loop over data and calculate correlation
        for(i in 1:length(columns_data)) {
          for (j in 1:length(columns_metadata)) {
-           NA_ = which(is.na(factor2[[j]]))
-           if(length(NA_)>0){
-             rho = cor(factor1[[i]][-NA_], factor2[[j]][-NA_], method = "spearman")
-             p = cor.test(factor1[[i]][-NA_], factor2[[j]][-NA_], method = "spearman")[3]$p.value
-           }else{
-             rho = cor(factor1[[i]], factor2[[j]], method = "spearman")
-             p = cor.test(factor1[[i]],factor2[[j]], method = "spearman")[3]$p.value
+           
+           # Find NA indices in metadata
+           if(identical(cor_type,"tm")) {
+             NA_ <- which(is.na(factor2[[j]]))
+           } else {
+             NA_ <- union(which(is.na(factor1[[i]])), which(is.na(factor2[[j]])))
            }
+
+           # Compute correlation after removing NAs
+           if(length(NA_)>0){
+             factor1_nonas <- factor1[[i]][-NA_]
+             factor2_nonas <- factor2[[j]][-NA_]
+           }else{
+             factor1_nonas <- factor1[[i]]
+             factor2_nonas <- factor2[[j]]
+           }
+            
+           rho = cor(factor1_nonas, factor2_nonas, method = "spearman")
+
+           # Calculate p value and report results
            if(!is.na(rho)){
+             p = cor.test(factor1_nonas,factor2_nonas, method = "spearman")[3]$p.value
              line<-data.table(columns_data[i], columns_metadata[j], rho, p, log10(0.5+2/p))
              result<-rbindlist(list(result, line))
            }
          }
        }
+
+       # Remove self-correlations
        result<-subset(result, taxon!=metadata)
        colnames(result)<-c(column_factor1, column_factor2, "rho", "pvalue", "size")
 

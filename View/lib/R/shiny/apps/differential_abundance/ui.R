@@ -35,7 +35,7 @@ shinyUI(
                   "category",
                   choices = NULL,
                   label = "Design Factor",
-                  options = list(placeholder = 'Choose metadata to calculate differential abundance'),
+                  options = list(placeholder = 'Choose design factor to calculate differential abundance'),
                   width = "100%"
                 )
               ),

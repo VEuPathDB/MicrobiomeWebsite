@@ -29,7 +29,10 @@ shinyServer(function(input, output, session) {
   hash_count_samples <- NULL
   ggplot_object <- NULL
   ggplot_build_object <- NULL
+  max_point_size <- 10
+  plot_margin <- 30
   
+  MAX_SAMPLES_NO_RESIZE <- 6
   SAMPLE <- NULL
   OTU<-NULL
   TAX<-NULL
@@ -365,11 +368,37 @@ shinyServer(function(input, output, session) {
 
   
   # Render main chart. Contains functions listening to Generate Plot button press
-  output$mainChart <- renderUI({
+  observeEvent(input$go, {
 
-    # Create plot after using DESeq to calculate differential abundance.
-    generatePlot()
+    # Clear current plot
+    output$mainChart <- NULL
+    output$plotWrapper <- NULL
+    output$datatableOutput <- NULL
 
+    # Remove ui elements
+    removeUI(selector = ".svg-container", multiple=TRUE, immediate=TRUE)
+    removeUI(selector = "#plotWrapper", multiple=TRUE, immediate=TRUE)
+
+    # Create new plot
+    generated_plot <- generatePlot()
+
+    # The following must be set *outside* of the generatePlot function or the resizing does not work properly
+    if(!is.null(generated_plot)){
+      if(rows_in_plot<MAX_SAMPLES_NO_RESIZE){
+          generated_plot<-plotlyOutput("plotWrapper",
+            width = "100%", height = "350px"
+          )
+        }else{
+          generated_plot<-plotlyOutput("plotWrapper",
+            width = "100%", # Changes width of main svg and wrapper
+            height=paste0(rows_in_plot*max_point_size*5+plot_margin,"px")
+          )
+      }
+    }
+
+    output$mainChart <- renderUI({generated_plot})
+
+   
   })
 
 
@@ -415,7 +444,9 @@ shinyServer(function(input, output, session) {
 
   # Create plot on button press
   generatePlot <- reactive({
-    
+   
+    input$go
+ 
     # Read inputs
     isolate({
       category <- input$category
@@ -442,13 +473,16 @@ shinyServer(function(input, output, session) {
         max_fold_change<-max(abs(deseq_result$log2FoldChange))
         category_column <- hash_count_samples[[category]]
         limits_plot<-c(levels(deseq_result[[taxon_level]]),"","")
+        # Remove introduced "" levels
+        limits_plot <- limits_plot[limits_plot != ""]
+        rows_in_plot <<- uniqueN(deseq_result[[taxon_level]])
         
         chart<-ggplot(deseq_result, aes_string(x="log2FoldChange", y=taxon_level, color="Phylum")) +
           xlim(-max_fold_change, max_fold_change)+
           # ylim(0, nrow(deseq_result)+1.5)+
           geom_segment(aes_string(x = 0, y = taxon_level, xend = "log2FoldChange", yend = taxon_level), color = "grey50") +
           geom_point(aes(size = log10(0.5+1/pvalue)))+
-          scale_size(range = c(3, 9), guide = 'none')+
+          scale_size(range = c(3, max_point_size), guide = 'none')+
           labs(title = paste0("<b>",category,"</b>: ", factor1, " <i>vs.</i> ", factor2))+
           theme_eupath(legend.position = "bottom")+
           scale_y_discrete(position = "right", limits=limits_plot, breaks = levels(deseq_result[[taxon_level]]) )+
