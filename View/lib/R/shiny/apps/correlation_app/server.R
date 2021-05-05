@@ -248,6 +248,12 @@ observeEvent(input$go, {
         result[,(cols):= lapply(.SD, as.factor), .SDcols = cols]  # Note factors helpful for plot formatting
 
         if(nrow(result)>0){
+          
+          if (identical(cor_type, "mm")) {
+            chart_ylab <- "Sample details"
+          } else {
+            chart_ylab <- taxon_level
+          }
 
           chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
               geom_point(aes_string(size="size", colour ="rho"))+
