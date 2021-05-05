@@ -111,11 +111,7 @@ shinyServer(function(input, output, session) {
                 label = "Distance Method",
                 choices = c("Bray-Curtis" = "bray",
                             "Jensen-Shannon Divergence"="jsd",
-                            "Jaccard" = "jaccard",
-                            "Canberra" = "canberra",
-                            "Kulczynski"="kulczynski",
-                            "Horn"="horn",
-                            "Mountford"="mountford"),
+                            "Jaccard" = "jaccard"),
                 selected = mySelected)
 
   })
