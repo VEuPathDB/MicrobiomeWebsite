@@ -182,7 +182,7 @@ observeEvent(input$go, {
           )
         }else{
           generated_plot<-plotlyOutput("plotWrapper",
-            width = "800px", # Changes width of main svg and wrapper
+            width = "100%", # Changes width of main svg and wrapper
             height=paste0(rows_in_plot*max_point_size*4+plot_margin,"px")
           )
       }
