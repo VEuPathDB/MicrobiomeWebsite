@@ -51,6 +51,12 @@ MicrobiomeStats <- R6Class("MicrobiomeStats",
            column_factor1<-taxonomy_level
          }
        }
+
+        # If we are left with no metadata, return null
+        if (NROW(metadata_data)==0){
+          return (NULL)
+        }
+
        number_rows <- ncol(factor1)*ncol(factor2)
 
        # pairwise.complete<-cor(data.cor,consumo, method="spearman", use="pairwise.complete.obs")
