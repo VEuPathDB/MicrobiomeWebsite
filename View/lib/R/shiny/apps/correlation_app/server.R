@@ -27,11 +27,12 @@ shinyServer(function(input, output, session) {
   column_y<-NULL
   hash_colors <- NULL
   max_point_size <- 10
-  plot_margin <- 100
+  plot_margin <- 200
 
   # variables to define some plot parameters
   NUMBER_TAXA <- 10
-  MAX_SAMPLES_NO_RESIZE <- 10
+  MAX_SAMPLES_NO_RESIZE <- 7
+  MAX_METADATA_NO_RESIZE <- 7
   MIN_HEIGHT_AFTER_RESIZE <- 12
 
   NO_METADATA_SELECTED <- "No Metadata Selected"
@@ -171,21 +172,44 @@ observeEvent(input$go, {
     # Compute correlation 
     mstudy <<- load_microbiome_data()
 
-    # Create plot
-    generated_plot <- generatePlot()
+    if (NROW(cor_result)>0) {
+      # Create plot
+      generated_plot <- generatePlot()
 
-    # The following must be set *outside* of the generatePlot function or the resizing does not work properly
-    if(nrow(cor_result)>0){
+      # The following must be set *outside* of the generatePlot function or the resizing does not work properly
       if(rows_in_plot<MAX_SAMPLES_NO_RESIZE){
+        # Then height can be fixed
+
+        if(cols_in_plot<MAX_METADATA_NO_RESIZE){
+            generated_plot<-plotlyOutput("plotWrapper",
+              width = "700px", height = "700px"
+            )
+        } else {
+          # Reseize width
+            generated_plot<-plotlyOutput("plotWrapper",
+              width = paste0(cols_in_plot*max_point_size*4+plot_margin,"px"), height = "700px"
+            )
+        } # end if cols_in_plot < MAX
+
+      } else {
+        # Then we need to resize height
+
+        if(cols_in_plot<MAX_METADATA_NO_RESIZE) {
           generated_plot<-plotlyOutput("plotWrapper",
-            width = "100%", height = "700px"
-          )
-        }else{
-          generated_plot<-plotlyOutput("plotWrapper",
-            width = "800px", # Changes width of main svg and wrapper
+            width = "700px",
             height=paste0(rows_in_plot*max_point_size*4+plot_margin,"px")
           )
+        } else {
+          # Also resize width
+          generated_plot<-plotlyOutput("plotWrapper",
+            width = paste0(cols_in_plot*max_point_size*4+plot_margin,"px"),
+            height=paste0(rows_in_plot*max_point_size*4+plot_margin,"px")
+          )
+
+        }
       }
+    } else {
+      generated_plot <- h5(class="alert alert-warning", "There is no correlation with the selected parameters.")
     }
 
     output$correlationChart <- renderUI({generated_plot})
@@ -242,7 +266,9 @@ observeEvent(input$go, {
         # p <-input$pvalueCutoff
         # result <- subset(cor_result, pvalue<p)
         result <- cor_result
-
+        if(is.null(result)) {
+          return()
+        }
 
         cols <- colnames(result)[1:2]
         result[,(cols):= lapply(.SD, as.factor), .SDcols = cols]  # Note factors helpful for plot formatting
@@ -271,8 +297,10 @@ observeEvent(input$go, {
           # Calculate the number of rows in the resulting plot for later plot sizing.
           if(identical(cor_type, "tm")){
             rows_in_plot <<- uniqueN(result[[taxon_level]])
+            cols_in_plot <<- uniqueN(result[, metadata])
           } else if(identical(cor_type, "mm")) {
             rows_in_plot <<- uniqueN(result[, metadata.1])
+            cols_in_plot <<- uniqueN(result[, metadata.1])
           }
 
           # Calculate new plot height. Not exact because I'm unsure of the map from max_point_size as a ggpplot input to circle diameter in the output svg.

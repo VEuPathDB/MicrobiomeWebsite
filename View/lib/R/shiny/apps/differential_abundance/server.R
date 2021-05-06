@@ -520,6 +520,7 @@ shinyServer(function(input, output, session) {
     })
 
     deseq_output <- NULL
+    noReps <- FALSE
 
     inputs_validated <- validate_inputs()
 
@@ -567,67 +568,79 @@ shinyServer(function(input, output, session) {
         geoMeans = apply(counts(diagdds), 1, gm_mean)
 
         diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
-        diagdds = DESeq(diagdds, fitType="local", quiet=T)
+        # Check to see if we have replicates
+        # The following is from DESeq2 checkForExperimentalReplicates function to prevent erring and instead return helpful information.
+        mmtest <- getModelMatrix(diagdds)
+        noReps <- nrow(mmtest) == ncol(mmtest)
+        
+        deseq2Try <- try({
+          diagdds = DESeq(diagdds, fitType="local", quiet=T)
 
-        #investigating test result
-        res = results(diagdds)
+          #investigating test result
+          res = results(diagdds)
         
-        res = res[order(res$padj, na.last=NA), ]
-        alpha = 0.01
-        sigtab = res[(res$padj < alpha), ]
+          res = res[order(res$padj, na.last=NA), ]
+          alpha = 0.01
+          sigtab = res[(res$padj < alpha), ]
         
-        if(nrow(sigtab)>0){
-          sigtab = cbind(as(sigtab, "data.frame"), as(TAX[rownames(sigtab), ], "matrix"))
+          if(nrow(sigtab)>0){
+            sigtab = cbind(as(sigtab, "data.frame"), as(TAX[rownames(sigtab), ], "matrix"))
           
-          sigtab<-sigtab[order(sigtab$log2FoldChange),]
-          sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
+            sigtab<-sigtab[order(sigtab$log2FoldChange),]
+            sigtab[,taxon_level]<-factor(sigtab[,taxon_level], levels=sigtab[,taxon_level])
     
-          rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level])
+            rownames(abundance_otu_relative) <- ifelse(duplicated(abundance_taxa[,taxon_level]), paste(rownames(abundance_otu_relative), abundance_taxa[,taxon_level]), abundance_taxa[,taxon_level])
 
-          myOTU <- as.data.frame(t(abundance_otu_relative))
-          myOTU$sampleName <- rownames(t(abundance_otu_relative))
-          samdata <- data.frame(sample_data(new_physeq_obj))
-          samdata$sampleName <- rownames(samdata)
-          samdata[, category_column] <- paste("Median abundance", as.character(samdata[, category_column]))
-          data <- merge(samdata, myOTU, by = 'sampleName') 
-          data <- data %>%
-              group_by(get(category_column)) %>%
-            summarise_at(vars(-sampleName), funs(median(as.numeric(.), na.rm = TRUE)))
-          data[,2] <- data[,1]
-          names <- data[,category_column]
-          data <- t(data[3:length(data)])
-          colnames(data) <- unlist(names)
-          data <- as.data.frame.matrix(data)
-          data[[taxon_level]] <- rownames(data)
-                cols_to_show<-sigtab[,c("baseMean", "log2FoldChange", "pvalue", taxon_level)]
-          cols_to_show <- merge(cols_to_show, data, by=taxon_level)
+            myOTU <- as.data.frame(t(abundance_otu_relative))
+            myOTU$sampleName <- rownames(t(abundance_otu_relative))
+            samdata <- data.frame(sample_data(new_physeq_obj))
+            samdata$sampleName <- rownames(samdata)
+            samdata[, category_column] <- paste("Median abundance", as.character(samdata[, category_column]))
+            data <- merge(samdata, myOTU, by = 'sampleName') 
+            data <- data %>%
+                group_by(get(category_column)) %>%
+              summarise_at(vars(-sampleName), funs(median(as.numeric(.), na.rm = TRUE)))
+            data[,2] <- data[,1]
+            names <- data[,category_column]
+            data <- t(data[3:length(data)])
+            colnames(data) <- unlist(names)
+            data <- as.data.frame.matrix(data)
+            data[[taxon_level]] <- rownames(data)
+                  cols_to_show<-sigtab[,c("baseMean", "log2FoldChange", "pvalue", taxon_level)]
+            cols_to_show <- merge(cols_to_show, data, by=taxon_level)
           
   
-          output$datatableOutput<-renderDataTable(cols_to_show,
-                                                  options = list(
-                                                    order = list(list(1, 'desc'))
-                                                  )
-          )
-          # log data transformation by https://stats.stackexchange.com/questions/83914/how-to-log-transform-data-with-a-large-number-of-zeros
-          deseq_output<-sigtab
-        }else{
-          output$datatableOutput<-renderDataTable(NULL)
-        }
+            output$datatableOutput<-renderDataTable(cols_to_show,
+                                                    options = list(
+                                                      order = list(list(1, 'desc'))
+                                                    )
+            )
+            # log data transformation by https://stats.stackexchange.com/questions/83914/how-to-log-transform-data-with-a-large-number-of-zeros
+            deseq_output<-sigtab
+          }
+        })
       }
       shinyjs::hide("chartLoading")
       shinyjs::show("chartContent")
       
       # If the output is null, update the plot appropriately
-      if (is.null(deseq_output)) {
+      if (is.null(deseq_output) | class(deseq2Try) == "try-error") {
         shinyjs::disable("btnDownloadPNG")
         shinyjs::disable("btnDownloadSVG")
         shinyjs::disable("btnDownloadEPS")
         shinyjs::disable("btnDownloadCSV")
 
-        output$InputErrors <- renderUI(
-          h5(class="alert alert-warning", "Sorry, but there is no OTU with differential abundance using your search parameters.")
-        )
+        output$datatableOutput<-renderDataTable(NULL)
 
+        if (noReps) {
+          output$InputErrors <- renderUI(
+          h5(class="alert alert-warning", "No replicates found. DESeq2 requires replicates to run.")
+          )
+        } else {
+          output$InputErrors <- renderUI(
+            h5(class="alert alert-warning", "Sorry, but there is no OTU with differential abundance using your search parameters.")
+          )
+        }
       }
 
     } # End if inputs_validated = T

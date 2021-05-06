@@ -138,3 +138,12 @@ group_numerical_dt <- function(dt, col_group, col_count="COUNT", by=NULL, n_keep
   # dt_final[,(col_count):=ifelse(get(col_count)==maximum, 0, get(col_count))]
   rbindlist(list(sub_others,sub_maximum))
 }
+
+# DESeq2 helper functions - straight from DESeq2
+getModelMatrix <- function(object) {
+  if (is(design(object), "matrix")) {
+    design(object)
+  } else if (is(design(object), "formula")) {
+    stats::model.matrix.default(design(object), data=as.data.frame(colData(object)))
+  }
+}
