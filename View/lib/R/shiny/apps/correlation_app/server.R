@@ -26,8 +26,6 @@ shinyServer(function(input, output, session) {
   column_x<-NULL
   column_y<-NULL
   hash_colors <- NULL
-  max_point_size <- 10
-  plot_margin <- 0
 
   # variables to define some plot parameters
   NUMBER_TAXA <- 10
@@ -196,11 +194,11 @@ observeEvent(input$go, {
       col_label_overhang <- (max(max_col_label_length*96*cos(pi/4) - 0.5*MAX_POINT_SIZE*POINT_SIZE_SCALE_FACTOR, 0))
       col_label_height <- max_col_label_length*96*sin(pi/4)    
       
-      # plot_width = (width of x-axis) + (width of row labels in px) + (overhang from angled column labels) + margin
-      plot_width <- (cols_in_plot*col_width) + max_row_label_width + col_label_overhang + plot_margin
+      # plot_width = (width of x-axis) + (width of row labels in px) + (overhang from angled column labels)
+      plot_width <- (cols_in_plot*col_width) + max_row_label_width + col_label_overhang
 
-      # plot_height = (height of y-axis) + (height of column lables accounting for angle) + margin
-      plot_height <- (rows_in_plot*row_height) + col_label_height + plot_margin
+      # plot_height = (height of y-axis) + (height of column lables accounting for angle)
+      plot_height <- (rows_in_plot*row_height) + col_label_height
 
       generated_plot <- plotlyOutput("plotWrapper", 
           width = paste0(plot_width, 'px'),
@@ -281,7 +279,7 @@ observeEvent(input$go, {
 
           chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
               geom_point(aes(size = log10(0.5+1/pvalue), colour =rho))+
-              scale_size(range = c(1, max_point_size), guide = 'none')+
+              scale_size(range = c(1, MAX_POINT_SIZE), guide = 'none')+
               theme_eupath_default()+
               scale_colour_gradient2(high="#d8b365", mid="#f0f0f0", low="#5ab4ac", limits=c(-1,1))+
               scale_y_discrete(limits = stringr::str_sort(as.character(unique(result[[cols[1]]])), decreasing=T))+
