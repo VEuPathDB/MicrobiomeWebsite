@@ -311,7 +311,7 @@ observeEvent(input$go, {
           
 
           output$plotWrapper<-renderPlotly({
-            ggplotly(chart) %>% layout(xaxis=list(side="top")) %>% plotly:::config(displaylogo = FALSE)
+            ggplotly(chart) %>% layout(xaxis=list(side="top"), margin=list(b=0)) %>% plotly:::config(displaylogo = FALSE)
           })
 
           # Populate and render data table
