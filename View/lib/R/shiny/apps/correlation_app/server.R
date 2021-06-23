@@ -201,11 +201,10 @@ observeEvent(input$go, {
           )
         } else {
           # Also resize width
-          generated_plot<-plotlyOutput("plotWrapper",
-            width = paste0(cols_in_plot*(max_point_size*4.5)+(max_row_label_width*96)+plot_margin,"px"),
+	  generated_plot<-plotlyOutput("plotWrapper",
+            width = paste0(cols_in_plot*(max_point_size*4.5)+(max_row_label_width*96) + (max(max_col_label_height*96*cos(pi/4) - max_point_size*4.5, 0)) + plot_margin,"px"),
             height= paste0(rows_in_plot*(max_point_size*4.5)+(max_col_label_height*96*sin(pi/4))+plot_margin,"px")          
           )
-
         }
       }
     } else {
