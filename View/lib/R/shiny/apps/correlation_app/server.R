@@ -26,15 +26,13 @@ shinyServer(function(input, output, session) {
   column_x<-NULL
   column_y<-NULL
   hash_colors <- NULL
-  max_point_size <- 10
-  plot_margin <- 200
 
   # variables to define some plot parameters
   NUMBER_TAXA <- 10
-  MAX_SAMPLES_NO_RESIZE <- 7
-  MAX_METADATA_NO_RESIZE <- 7
-  MIN_HEIGHT_AFTER_RESIZE <- 12
-
+  MAX_VARS_NO_RESIZE <- 3
+  MAX_POINT_SIZE <- 10
+  POINT_SIZE_SCALE_FACTOR <- 5
+  
   NO_METADATA_SELECTED <- "No Metadata Selected"
 
   oldw <- getOption("warn")
@@ -176,38 +174,36 @@ observeEvent(input$go, {
       # Create plot
       generated_plot <- generatePlot()
 
-      # The following must be set *outside* of the generatePlot function or the resizing does not work properly
-      if(rows_in_plot<MAX_SAMPLES_NO_RESIZE){
-        # Then height can be fixed
+      # The below sizing must be set *outside* of the generatePlot function or the resizing does not work properly
 
-        if(cols_in_plot<MAX_METADATA_NO_RESIZE){
-            generated_plot<-plotlyOutput("plotWrapper",
-              width = "700px", height = "700px"
-            )
-        } else {
-          # Reseize width
-            generated_plot<-plotlyOutput("plotWrapper",
-              width = paste0(cols_in_plot*max_point_size*4+plot_margin,"px"), height = "700px"
-            )
-        } # end if cols_in_plot < MAX
-
+      # Determine col, row size
+      if (cols_in_plot < MAX_VARS_NO_RESIZE) {
+        col_width <- 200
       } else {
-        # Then we need to resize height
-
-        if(cols_in_plot<MAX_METADATA_NO_RESIZE) {
-          generated_plot<-plotlyOutput("plotWrapper",
-            width = "700px",
-            height=paste0(rows_in_plot*max_point_size*4+plot_margin,"px")
-          )
-        } else {
-          # Also resize width
-          generated_plot<-plotlyOutput("plotWrapper",
-            width = paste0(cols_in_plot*max_point_size*4+plot_margin,"px"),
-            height=paste0(rows_in_plot*max_point_size*4+plot_margin,"px")
-          )
-
-        }
+        col_width <- MAX_POINT_SIZE * POINT_SIZE_SCALE_FACTOR  # Arbitrary scaling of maximum point size since we do not have a map of point size to pixels
       }
+
+      if (rows_in_plot < MAX_VARS_NO_RESIZE) {
+        row_height <- 200
+      } else {
+        row_height <- MAX_POINT_SIZE * POINT_SIZE_SCALE_FACTOR  # Arbitrary scaling of maximum point size since we do not have a map of point size to pixels
+      }
+
+      # Intermediate plot sizing calculations
+      max_row_label_width <- 96*max_row_label_width  # get width in pixels
+      col_label_overhang <- (max(max_col_label_length*96*cos(pi/4) - 0.5*MAX_POINT_SIZE*POINT_SIZE_SCALE_FACTOR, 0))
+      col_label_height <- max_col_label_length*96*sin(pi/4)    
+      
+      # plot_width = (width of x-axis) + (width of row labels in px) + (overhang from angled column labels)
+      plot_width <- (cols_in_plot*col_width) + max_row_label_width + col_label_overhang
+
+      # plot_height = (height of y-axis) + (height of column lables accounting for angle)
+      plot_height <- (rows_in_plot*row_height) + col_label_height
+
+      generated_plot <- plotlyOutput("plotWrapper", 
+          width = paste0(plot_width, 'px'),
+          height= paste0(plot_height, 'px')
+      )
     } else {
       generated_plot <- h5(class="alert alert-warning", "There is no correlation with the selected parameters.")
     }
@@ -283,7 +279,7 @@ observeEvent(input$go, {
 
           chart<-ggplot(result, aes_string(x=cols[2], y=cols[1]))+
               geom_point(aes(size = log10(0.5+1/pvalue), colour =rho))+
-              scale_size(range = c(1, max_point_size), guide = 'none')+
+              scale_size(range = c(1, MAX_POINT_SIZE), guide = 'none')+
               theme_eupath_default()+
               scale_colour_gradient2(high="#d8b365", mid="#f0f0f0", low="#5ab4ac", limits=c(-1,1))+
               scale_y_discrete(limits = stringr::str_sort(as.character(unique(result[[cols[1]]])), decreasing=T))+
@@ -297,19 +293,22 @@ observeEvent(input$go, {
           # Calculate the number of rows in the resulting plot for later plot sizing.
           if(identical(cor_type, "tm")){
             rows_in_plot <<- uniqueN(result[[taxon_level]])
+	    max_row_label_width <<- max(unlist(lapply(result[[taxon_level]], strwidth, units="in")))
+            
             cols_in_plot <<- uniqueN(result[, metadata])
+            max_col_label_length <<- max(unlist(lapply(result[, metadata], strwidth, units="in")))
           } else if(identical(cor_type, "mm")) {
             rows_in_plot <<- uniqueN(result[, metadata.1])
+            max_row_label_width <<- max(unlist(lapply(result[, metadata.1], strwidth, units="in")))
+            
             cols_in_plot <<- uniqueN(result[, metadata.1])
+            max_col_label_length <<- max_row_label_width
           }
 
-          # Calculate new plot height. Not exact because I'm unsure of the map from max_point_size as a ggpplot input to circle diameter in the output svg.
-          new_height <- rows_in_plot*max_point_size*4
-          chart$height <- new_height
           
 
           output$plotWrapper<-renderPlotly({
-            ggplotly(chart) %>% layout(xaxis=list(side="top")) %>% plotly:::config(displaylogo = FALSE)
+            ggplotly(chart) %>% layout( xaxis=list(side="top"), margin=list(b=0)) %>% plotly:::config(displaylogo = FALSE)
           })
 
           # Populate and render data table

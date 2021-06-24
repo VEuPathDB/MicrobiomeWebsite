@@ -78,6 +78,7 @@ shinyUI(
                #   HTML("<span class='hint--bottom  hint--rounded' aria-label='We have rounded corners for you'>Hmm...So you don't like sharp edges?</span>")
                # )),
              fluidRow(column(
+                style='padding-top:40px',
                 12,
                    dataTableOutput("datatableOutput")
               ))
