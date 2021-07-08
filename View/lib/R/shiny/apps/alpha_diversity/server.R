@@ -6,6 +6,7 @@ library(data.table)
 library(httr)
 library(gtools)
 library(plotly)
+library(vegan)
 source("../../functions/ebrc_functions.R")
 source("../../lib/mbiome/mbiome-reader.R")
 source("../../lib/ggplot_ext/eupath_default.R")
@@ -28,8 +29,8 @@ shinyServer(function(input, output, session) {
   
   richness_object <- NULL
   
-  all_measures <- c("Chao1", "ACE", "Shannon", "Simpson")#, "Fisher")
-  
+  all_measures <- c("Shannon", "Simpson")
+ 
   phyloseq_obj <- NULL
   
   # global objects to read in more than one function
@@ -115,6 +116,12 @@ shinyServer(function(input, output, session) {
       phyloseq_obj <- mbiome2phyloseq(mstudy_obj, "Species")
       
       richness_object <<- estimate_richness(phyloseq_obj, measures = all_measures)
+ 
+      # Calculate evenness
+      H <- richness_object$Shannon
+      # Note this calculation uses the default of natural log instead of log_2
+      richness_object$evenness <<- H/log(vegan::specnumber(t(phyloseq::otu_table(phyloseq_obj))))
+      
       richness_object$SampleName <<- rownames(sample_data(phyloseq_obj)) 
       
     }
@@ -135,9 +142,7 @@ shinyServer(function(input, output, session) {
                 label = "Measure",
                 choices = c("Shannon" = "Shannon",
                             "Simpson"="Simpson",
-                            "Chao1" = "Chao1",
-                            "ACE" = "ACE"),
-                            #"Fisher"="Fisher"),
+                            "Evenness" = "evenness"),                
                 selected = mySelected)
   })  
 
@@ -188,7 +193,7 @@ shinyServer(function(input, output, session) {
     verticalCategory <- input$categoryFacet1
     horizontalCategory <- input$categoryFacet2
     
-    if(identical(measure,"") | is.na(measure) | !(measure %in% all_measures) ){
+    if(identical(measure,"") | is.na(measure) ){
       output$byMetadataDt <- renderDataTable(NULL)
       output$result_tests <- renderUI(NULL)
       result_to_show<-h5(class="alert alert-warning", "Please choose at least one alpha diversity measure.")
@@ -222,14 +227,7 @@ shinyServer(function(input, output, session) {
       }
       dt_metadata<-mstudy$get_metadata_as_column(all_columns)
       
-      
-      if(identical(measure,"Chao1")){
-        rich <- richness_object[,c("SampleName", measure,"se.chao1")]
-      }else if(identical(measure,"ACE")){
-        rich <- richness_object[,c("SampleName", measure,"se.ACE")]
-      }else{
-        rich <- richness_object[,c("SampleName", measure)]
-      }
+      rich <- richness_object[,c("SampleName", measure)]
       
       richness_merged <- merge(dt_metadata, rich, by = "SampleName")
       # richness_merged<-na.omit(richness_merged)
