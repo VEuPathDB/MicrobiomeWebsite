@@ -9,6 +9,10 @@ SampleClass <- R6Class("SampleClass",
         sample_dt = NULL,
         initialize = function(sample_dt = NA) {
           
+          # Sort sample data table alphabetically by sample name
+          sample_dt <- sample_dt %>% arrange(SampleName)
+          sample_dt <- as.data.table(sample_dt)         
+ 
           self$sample_dt <- sample_dt
           private$sample_names <- unique(sample_dt$SampleName)
           
