@@ -9,9 +9,10 @@ MicrobiomeData <- R6Class("MicrobiomeData",
          initialize = function(otu_table = NA, sample_table = NA) {
            self$otu_table <- otu_table
            self$sample_table <- sample_table
-           
+          
            sample_from_metadata <- self$sample_table$get_sample_names()
            sample_from_taxa <- self$otu_table$get_sample_names()
+            
            
            if(isTRUE(all.equal(sample_from_metadata,sample_from_taxa))){
              private$common_samples <- sample_from_taxa
