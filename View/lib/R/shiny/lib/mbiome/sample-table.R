@@ -47,7 +47,7 @@ SampleClass <- R6Class("SampleClass",
               private$dcast_sample_dt <-dcast(data = self$sample_dt,formula = SampleName~Property, value.var = "Value")
             }else{
               private$dcast_sample_dt <-dcast(
-                data = subset(self$sample_dt, SampleName != filter_samples),formula = SampleName~Property, value.var = "Value")
+                data = self$sample_dt[!(self$sample_dt$SampleName %in% filter_samples), ], formula = SampleName~Property, value.var = "Value")
             }
             qm<-self$get_quantitative_metadata()
             private$dcast_sample_dt[, (qm):=lapply(.SD, as.numeric), .SDcols=qm]
