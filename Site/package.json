@@ -9,6 +9,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@veupathdb/study-data-access": "^0.2.0",
     "@veupathdb/wdk-client": "^0.5.4",
     "@veupathdb/web-common": "^0.2.1"
   },
