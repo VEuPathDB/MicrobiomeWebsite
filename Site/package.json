@@ -1,5 +1,5 @@
 {
-  "name": "clinepi-website",
+  "name": "mbio-website",
   "version": "0.1.0",
   "description": "",
   "scripts": {
@@ -8,6 +8,9 @@
   "keywords": [],
   "author": "",
   "license": "Apache-2.0",
+  "browserslist": [
+    "extends @veupathdb/browserslist-config"
+  ],
   "dependencies": {
     "@emotion/react": "^11.7.0",
     "@emotion/styled": "^11.7.0",
