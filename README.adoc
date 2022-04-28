@@ -1,0 +1,20 @@
+== MicrobiomeWebsite
+frontend pages (js, images, css, html) that add or modify EbrWebsiteCommmon and WDKClient, used in MicrobiomeDB.org.
+
+=== Local Development
+
+First, configure your local development environment by adding a `.env` file in `MicrobiomeWebsite/Site`. (We have provided a sample config in `.env.sample`.)
+
+Next, install dependencies from npm:
+
+[source, sh]
+----
+yarn install
+----
+
+Finally, start the dev server:
+
+[source, sh]
+----
+yarn start
+----

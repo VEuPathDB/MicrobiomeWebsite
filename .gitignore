@@ -38,3 +38,8 @@ node_modules/
 #
 target
 *~
+
+# Environment files
+.env
+.env.local
+.env.*.local
