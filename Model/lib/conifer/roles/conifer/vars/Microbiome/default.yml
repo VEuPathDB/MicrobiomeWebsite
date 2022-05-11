@@ -10,6 +10,9 @@ modelprop:
   TWITTER_WIDGET_ID: 788427253331951616
   VIMEO_URL: https://vimeo.com/album/5598563
 
+user_datasets_workspace:
+  enabled: "true"
+
 modelconfig_oauthUrl: https://eupathdb.org/oauth
 modelconfig_authenticationMethod: oauth2
 modelconfig_oauthClientId: apiComponentSite
