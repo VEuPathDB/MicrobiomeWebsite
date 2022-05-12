@@ -1,4 +1,7 @@
+import { partial } from 'lodash';
+
 import { initialize } from '@veupathdb/web-common';
+import { wrapWdkDependencies } from '@veupathdb/study-data-access/lib/shared/wrapWdkDependencies';
 
 import '@veupathdb/web-common/lib/styles/client.scss';
 
@@ -12,5 +15,6 @@ import 'site/css/MicrobiomeSite.css';
 initialize({
   componentWrappers,
   wrapStoreModules,
+  wrapWdkDependencies: partial(wrapWdkDependencies, undefined),
   wrapRoutes,
 })
