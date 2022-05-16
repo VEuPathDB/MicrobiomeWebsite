@@ -1,4 +1,4 @@
-<project name="MicrobiomeWebsite" default="Installation" basedir=".">
+<project name="MicrobiomeWebsite" basedir=".">
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
@@ -12,26 +12,18 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="MicrobiomeWebsite-Installation" depends="EbrcWebSvcCommon-Installation,
-                                                       MicrobiomeWebsite-MavenInstallation,
-                                                       MicrobiomeModel-Installation,
-                                                       MicrobiomeWebsite/Model-Installation,
-                                                       MicrobiomeWebsite/View-Installation,
-                                                       MicrobiomeWebsite/Site-Installation">
+                                                         MicrobiomeModel-Installation,
+                                                         MicrobiomeWebsite/Model-Installation,
+                                                         MicrobiomeWebsite/View-Installation,
+                                                         MicrobiomeWebsite/Site-Installation">
     <ant target="defaultProjectInstall">
       <property name="project" value="MicrobiomeWebsite" />
     </ant>
   </target>
 
-  <target name="MicrobiomeWebsite-MavenInstallation">
-    <ant target="mavenBuildProject">
-      <property name="project" value="MicrobiomeWebsite" />
-    </ant>
-    <property name="alreadyBuilt" value="true" />
-  </target>
-
-  <!-- Added START-->
   <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
-  <target name="MicrobiomeWebsite/Model-Installation">
+
+	<target name="MicrobiomeWebsite/Model-Installation">
     <ant target="defaultComponentInstall">
       <property name="project" value="MicrobiomeWebsite" />
       <property name="component" value="Model" />
@@ -52,22 +44,22 @@
     </ant>
   </target>
 
-  <!-- Added  END-->
-
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <target name="MicrobiomeWebsite-WebInstallation" depends="EbrcWebSvcCommon-WebInstallation,
+
+	<target name="MicrobiomeWebsite-WebInstallation" depends="EbrcWebSvcCommon-WebInstallation,
                                                             MicrobiomeWebsite-Installation,
                                                             MicrobiomeWebsite/View-WebInstallation,
-                                                            MicrobiomeWebsite/Site-WebInstallation">
-  </target>
+                                                            MicrobiomeWebsite/Site-WebInstallation"/>
 
   <target name="MicrobiomeWebsite/Site-WebInstallation">
+
     <ant target="eupathWebComponentInstall">
       <property name="project" value="MicrobiomeWebsite" />
       <property name="component" value="Site" />
     </ant>
+
   </target>
 
   <target name="MicrobiomeWebsite/View-WebInstallation">
@@ -84,29 +76,4 @@
 
   </target>
 
-
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooo  Release  ooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
-  <target name="MicrobiomeWebsite-Release">
-    <ant target="defaultProjectRelease">
-      <property name="cvsroot" value=":ext:cvs.sanger.ac.uk:/cvsroot/GUS" />
-    </ant>
-  </target>
-
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
-  <target name="MicrobiomeWebsite-Distributable">
-
-    <copy todir="${targetDir}">
-      <fileset dir="${projectsDir}">
-        <exclude name="**/CVS/*" />
-      </fileset>
-    </copy>
-  </target>
-
 </project>
-
