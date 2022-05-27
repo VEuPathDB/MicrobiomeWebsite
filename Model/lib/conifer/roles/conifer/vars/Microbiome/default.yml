@@ -13,6 +13,9 @@ modelprop:
 eda:
   enabled: "true"
 
+user_datasets_workspace:
+  enabled: "true"
+
 modelconfig_oauthUrl: https://eupathdb.org/oauth
 modelconfig_authenticationMethod: oauth2
 modelconfig_oauthClientId: apiComponentSite

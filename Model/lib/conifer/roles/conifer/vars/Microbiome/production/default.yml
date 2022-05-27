@@ -18,6 +18,7 @@ modelprop:
   'attr=google_analytics_id xpath=sites/site[@hostname=\"{}\"] default='.format( hostname|swap_hostname(_host_frontends) )
   )
 }}"
+  COMMUNITY_SITE: "//{{ community_env_map[prefix]|default(community_env_map['default']) }}"
 
 
 # this mapping allow different configs based on hostname.  Mainly used to give
@@ -89,3 +90,12 @@ modelconfig_userDatasetStoreConfig: >
    <typeHandler type="example" version="1.0" implementation="org.gusdb.wdk.model.user.dataset.ExampleTypeHandler"/>
    <typeHandler type="BIOM" version="1.0, 2.0, or 2.1" implementation="org.apidb.apicommon.model.userdataset.BiomTypeHandler"/>
   </userDatasetStore>
+
+# the below extends the w_ q_ prefix pattern used for workspace_env_map, which
+# # really feels like a bad idea.  please don't let this cancer spread.  Find a
+# # generalized way to do this in the future... 
+community_env_map:
+  w_prefix: static-content.veupathdb.org/
+  b_prefix: static-content.veupathdb.org/
+  default: qa.static-content.veupathdb.org/
+
