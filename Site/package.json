@@ -27,7 +27,7 @@
     "@veupathdb/wdk-client": "^0.7.2",
     "@veupathdb/web-common": "^0.5.2",
     "core-js": "^3.21.1",
-    "jquery": "1.9.1",
+    "jquery": "3.5.0",
     "popper.js": "^1.16.1",
     "react": "16",
     "react-dom": "16",
