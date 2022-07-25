@@ -12,6 +12,7 @@ modelprop:
 
 eda:
   enabled: "true"
+  example_analyses_author: 1926010
 
 user_datasets_workspace:
   enabled: "true"
