@@ -55,10 +55,13 @@
 
   <target name="MicrobiomeWebsite/Site-WebInstallation">
 
-    <ant target="eupathWebComponentInstall">
+    <ant target="defaultWebComponentInstall">
       <property name="project" value="MicrobiomeWebsite" />
       <property name="component" value="Site" />
     </ant>
+    <copy todir="${webappTargetDir}/bundles">
+      <fileset dir="${projectsDir}/MicrobiomeWebsite/Site/node_modules/@veupathdb/mbio-site/dist" />
+    </copy>
 
   </target>
 
