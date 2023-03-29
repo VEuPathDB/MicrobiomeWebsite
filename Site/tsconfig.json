@@ -1,6 +1,0 @@
-{
-  "extends": "@veupathdb/site-tsconfig/tsconfig.json",
-  "include": [
-    "./webapp/**/*"
-  ]
-}
