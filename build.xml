@@ -60,9 +60,6 @@
       <property name="component" value="Site" />
     </ant>
     <copy todir="${webappTargetDir}">
-      <fileset dir="${projectsDir}/MicrobiomeWebsite/Site/node_modules/@veupathdb/mbio-site/webapp" />
-    </copy>
-    <copy todir="${webappTargetDir}/bundles">
       <fileset dir="${projectsDir}/MicrobiomeWebsite/Site/node_modules/@veupathdb/mbio-site/dist" />
     </copy>
 
