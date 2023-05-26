@@ -109,5 +109,6 @@ modelconfig_userDatasetStoreConfig: >
 community_env_map:
   w_prefix: static-content.veupathdb.org/
   b_prefix: static-content.veupathdb.org/
+  a_prefix: static-content.veupathdb.org/
   default: qa.static-content.veupathdb.org/
 
