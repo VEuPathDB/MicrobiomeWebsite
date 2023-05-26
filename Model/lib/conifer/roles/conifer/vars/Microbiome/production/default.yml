@@ -52,7 +52,7 @@ workspace_env_map:
     rootPath: /ebrc/workspaces/users
     zone: ebrc
     port: 1247
-  a_prefix: # Temporary configuration for the alpha stack to use prod IRODS.
+  alpha_prefix: # Temporary configuration for the alpha stack to use prod IRODS.
     host: irods.eupathdb.org
     login: wrkspuser
     password: "{{ lookup('euparc',
@@ -109,6 +109,6 @@ modelconfig_userDatasetStoreConfig: >
 community_env_map:
   w_prefix: static-content.veupathdb.org/
   b_prefix: static-content.veupathdb.org/
-  a_prefix: static-content.veupathdb.org/
+  alpha_prefix: static-content.veupathdb.org/
   default: qa.static-content.veupathdb.org/
 
