@@ -52,6 +52,17 @@ workspace_env_map:
     rootPath: /ebrc/workspaces/users
     zone: ebrc
     port: 1247
+  a_prefix: # Temporary configuration for the alpha stack to use prod IRODS.
+    host: irods.eupathdb.org
+    login: wrkspuser
+    password: "{{ lookup('euparc',
+      'attr=password xpath=workspaces/irods[@user=\"{}\"]'.format('wrkspuser')
+      )
+    }}"
+    resource: ebrcResc
+    rootPath: /ebrc/workspaces/users
+    zone: ebrc
+    port: 1247
   default:
     host: irods.qa.eupathdb.org
     login: qawrkspuser
