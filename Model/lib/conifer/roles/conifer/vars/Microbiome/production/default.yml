@@ -52,7 +52,7 @@ workspace_env_map:
     rootPath: /ebrc/workspaces/users
     zone: ebrc
     port: 1247
-  alpha_prefix: # Temporary configuration for the alpha stack to use prod IRODS.
+  a_prefix: # Temporary configuration for the alpha stack to use prod IRODS.
     host: irods.eupathdb.org
     login: wrkspuser
     password: "{{ lookup('euparc',
@@ -76,7 +76,8 @@ workspace_env_map:
     port: 1247
 
 # construct a prefix from hostname, like w_prefix, q_prefix
-prefix: "{{ hostname | regex_replace('^([a-z])[0-9].*','\\1_prefix') }}"
+# HACK! Intermediate regex_replace is just there to get alpha mbio working. This should be removed.
+prefix: "{{ hostname | regex_replace('^alpha.*','a1') | regex_replace('^([a-z])[0-9].*','\\1_prefix') }}"
 
 # use that prefix to reference the workspace_env_map above, if there is no key
 # available, default to the 'default' map
@@ -109,6 +110,6 @@ modelconfig_userDatasetStoreConfig: >
 community_env_map:
   w_prefix: static-content.veupathdb.org/
   b_prefix: static-content.veupathdb.org/
-  alpha_prefix: static-content.veupathdb.org/
+  a_prefix: static-content.veupathdb.org/
   default: qa.static-content.veupathdb.org/
 
