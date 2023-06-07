@@ -59,9 +59,11 @@
       <property name="project" value="MicrobiomeWebsite" />
       <property name="component" value="Site" />
     </ant>
-    <copy todir="${webappTargetDir}">
-      <fileset dir="${projectsDir}/MicrobiomeWebsite/Site/node_modules/@veupathdb/mbio-site/dist" />
-    </copy>
+
+    <ant target="installWebAssets">
+      <property name="project" value="MicrobiomeWebsite" />
+      <property name="sitePackageName" value="mbio-site"/>
+    </ant>
 
   </target>
 
