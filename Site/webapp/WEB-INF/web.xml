@@ -126,7 +126,7 @@
     <servlet-name>WSF</servlet-name>
     <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
     <init-param>
-      <param-name>javax.ws.rs.Application</param-name>
+      <param-name>jakarta.ws.rs.Application</param-name>
       <param-value>org.gusdb.wsf.service.WsfServiceApplication</param-value>
     </init-param>
   </servlet>
@@ -141,7 +141,7 @@
     <servlet-name>WDK</servlet-name>
     <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
     <init-param>
-      <param-name>javax.ws.rs.Application</param-name>
+      <param-name>jakarta.ws.rs.Application</param-name>
       <param-value>org.eupathdb.common.service.EuPathServiceApplication</param-value>
     </init-param>
   </servlet>
