@@ -3,6 +3,6 @@
 
 
 "@veupathdb/mbio-site@^1.1.0":
-  version "1.1.9"
-  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.1.9.tgz#4e1d8f60035879b1347d98d663bd444f448d3b4d"
-  integrity sha512-GAI10J5C5+TDjOmLRn/tUiD3JKs+8Jh5NRQv1gwkKgPel7+bGoYDnunKfrnrCxfProU3BZ0ABsbY71w9Zrw9dg==
+  version "1.1.10"
+  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.1.10.tgz#80f581a37378f40dd20185c25b49f8f87ce14f9a"
+  integrity sha512-XuX89pqPIbRKKUwT1JjgJQjZ737nWGXTHa5+VjjDmu3QnxjxJvdL/xsbZ0B+qxKKroWVMklylv1M7tU2SEatLQ==
