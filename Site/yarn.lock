@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@veupathdb/mbio-site@1.2.20-patch.6":
-  version "1.2.20-patch.6"
-  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.2.20-patch.6.tgz#087f6a998991f1e47ef2ca4ef8f01a43267d0eb5"
-  integrity sha512-IKNg7SGyYVlqTRhnzQV34kDeYOn2qfGFMvMemKCHlKKj3Z76CXXgWqEaWTzeskfcRNKuE7UWOMbp+QB0HFS3Dw==
+"@veupathdb/mbio-site@1.2.20-patch.7":
+  version "1.2.20-patch.7"
+  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.2.20-patch.7.tgz#c7e2246d7efe1cdf71ab03857d74634150451a3c"
+  integrity sha512-DueeDnR8RQLUk7Jjwg6gDmoldaANfbQtqgpKnGIA4SlJiud9vm0k2bu3T9Io4tVxz9A9h8yOE9vag5OARjMSQg==
