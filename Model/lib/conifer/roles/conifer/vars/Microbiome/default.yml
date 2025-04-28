@@ -19,6 +19,7 @@ eda:
 
 user_datasets_workspace:
   enabled: "true"
+  community: "true"
 
 modelconfig_oauthUrl: https://eupathdb.org/oauth
 modelconfig_authenticationMethod: oauth2
