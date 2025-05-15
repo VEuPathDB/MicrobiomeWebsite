@@ -2,6 +2,6 @@
   "name": "mbio-site-deployer",
   "private": true,
   "dependencies": {
-    "@veupathdb/mbio-site": "1.2.44"
+    "@veupathdb/mbio-site": "1.2.47-patch.2"
   }
 }
