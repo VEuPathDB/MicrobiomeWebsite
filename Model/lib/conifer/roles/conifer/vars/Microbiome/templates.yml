@@ -8,6 +8,9 @@ model-config.xml:
 model.prop:
   src: 'WDK/model.prop.j2'
   dest: '{{ gus_home }}/config/{{ project }}/model.prop'
+container_env:
+  src: 'EbrcWebsiteCommon/container_env.j2'
+  dest: '{{ gus_home }}/config/{{ project }}/container_env'
 tomcat_context.xml:
   src: 'WDK/tomcat_context.xml.j2'
   dest: '{{ gus_home }}/config/{{ webapp_ctx }}.xml'
