@@ -1,5 +1,6 @@
 # $SourceFileURL$
 ---
+webapp_bundle_type_segment: mbio
 
 modelconfig_modelName: microbiomeModel
 
