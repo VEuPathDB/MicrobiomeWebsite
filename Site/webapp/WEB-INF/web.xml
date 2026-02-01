@@ -16,9 +16,9 @@
     <param-value>/service</param-value>
   </context-param>
 
-  <listener>
+  <!--<listener>
     <listener-class>se.jiderhamn.classloader.leak.prevention.ClassLoaderLeakPreventorListener</listener-class>
-  </listener>
+  </listener>-->
 
   <listener>
     <listener-class>org.eupathdb.common.controller.ApplicationInitListener</listener-class>
