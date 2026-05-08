@@ -2,7 +2,34 @@
 # yarn lockfile v1
 
 
-"@veupathdb/mbio-site@1.3.44":
-  version "1.3.44"
-  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.3.44.tgz#86e911f8d017f492d1898292387b9c4bfde45e24"
-  integrity sha512-tj7A85zj+DOtrl0QZUJKVVdsJ7afd33CUT9uLjWYg0aLZSBJEnWp2sYDSnG3B9ZstHYl7We4rFlAGzA5TNuquQ==
+"@veupathdb/mbio-site@1.3.49":
+  version "1.3.49"
+  resolved "https://registry.yarnpkg.com/@veupathdb/mbio-site/-/mbio-site-1.3.49.tgz#0fc43a76cfb9471150341bc2357ad467768b96af"
+  integrity sha512-uG9mrWtycTIC/hkkTujzjiUIoisc7H0akM7hx6x0mVZ0sxjP1+BQNM/ul3JkNlSJU2Z9cW4qlI/xWMNn/dxLyQ==
+  dependencies:
+    "@veupathdb/preferred-organisms" "workspace:^"
+
+"@veupathdb/preferred-organisms@workspace:^":
+  version "1.1.16"
+  resolved "https://registry.yarnpkg.com/@veupathdb/preferred-organisms/-/preferred-organisms-1.1.16.tgz#9aae644d981b65859ede06345cc356efda496db5"
+  integrity sha512-TZzz7zVPmRPNwIKomOD4x1PpQPlpKypSv1VU1md8w8qKfn55IAodSlMcdLkl21FPrjdSePvkE7YBgptn7wscHA==
+  dependencies:
+    lodash "^4.17.21"
+    recoil "^0.2.0"
+
+hamt_plus@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/hamt_plus/-/hamt_plus-1.0.2.tgz#e21c252968c7e33b20f6a1b094cd85787a265601"
+  integrity sha512-t2JXKaehnMb9paaYA7J0BX8QQAY8lwfQ9Gjf4pg/mk4krt+cmwmU652HOoWonf+7+EQV97ARPMhhVgU1ra2GhA==
+
+lodash@^4.17.21:
+  version "4.18.1"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.18.1.tgz#ff2b66c1f6326d59513de2407bf881439812771c"
+  integrity sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
+
+recoil@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/recoil/-/recoil-0.2.0.tgz#69344b5bec3129272560d8d9d6001ada3ee4d80c"
+  integrity sha512-VOJfYVQ3VgmfS7L5tV9QdOR+AJhvll8yGr1+3nJPCqADulImuScGZ2sJtejPps3zfTu/o98y5kO4lje8Tx6XHw==
+  dependencies:
+    hamt_plus "1.0.2"
