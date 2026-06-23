@@ -21,7 +21,7 @@ user_datasets_workspace:
   enabled: "true"
   community: "true"
 
-modelconfig_oauthUrl: https://eupathdb.org/oauth
+modelconfig_oauthUrl: https://auth.veupathdb.org
 modelconfig_authenticationMethod: oauth2
 modelconfig_oauthClientId: apiComponentSite
 modelconfig_oauthClientSecret: "{{ lookup('csvfile',
